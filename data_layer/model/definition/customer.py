@@ -1,0 +1,124 @@
+"""
+SaleFlex.PyPOS - Point of Sale Application
+
+Copyright (c) 2025 Ferhat Mousavi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+from sqlalchemy import Column, BigInteger, String, Boolean, DateTime, Integer, UUID, Date, Text
+from sqlalchemy.sql import func
+from uuid import uuid4
+
+from data_layer.model.crud_model import Model
+from data_layer.model.crud_model import CRUD
+from data_layer.model.mixins import SoftDeleteMixin
+
+
+class Customer(Model, CRUD, SoftDeleteMixin):
+    """
+    Stores customer information including personal details and preferences
+    Extended to support loyalty programs and customer segmentation
+    """
+    def __init__(self, name=None, last_name=None, address_line_1=None, address_line_2=None, address_line_3=None,
+                 email_address=None, phone_number=None, phone_normalized=None, zip_code=None, description=None,
+                 date_of_birth=None, gender=None, national_id=None, tax_id=None,
+                 registration_source=None, marketing_consent=False, sms_consent=False,
+                 email_consent=False, preferences_json=None, is_walkin=False,
+                 is_active=True, is_administrator=False):
+        Model.__init__(self)
+        CRUD.__init__(self)
+
+        self.name = name
+        self.last_name = last_name
+        self.address_line_1 = address_line_1
+        self.address_line_2 = address_line_2
+        self.address_line_3 = address_line_3
+        self.email_address = email_address
+        self.phone_number = phone_number
+        self.phone_normalized = phone_normalized
+        self.zip_code = zip_code
+        self.description = description
+        self.date_of_birth = date_of_birth
+        self.gender = gender
+        self.national_id = national_id
+        self.tax_id = tax_id
+        self.registration_source = registration_source
+        self.marketing_consent = marketing_consent
+        self.sms_consent = sms_consent
+        self.email_consent = email_consent
+        self.preferences_json = preferences_json
+        self.is_walkin = is_walkin
+        self.is_active = is_active
+        self.is_administrator = is_administrator
+
+    __tablename__ = "customer"
+
+    id = Column(UUID, primary_key=True, default=uuid4)
+    
+    # Basic information
+    name = Column(String(50), nullable=False)
+    last_name = Column(String(50), nullable=False)
+    
+    # Contact information
+    address_line_1 = Column(String(100), nullable=True)
+    address_line_2 = Column(String(100), nullable=True)
+    address_line_3 = Column(String(100), nullable=True)
+    email_address = Column(String(100), nullable=True)
+    phone_number = Column(String(100), nullable=True)
+    # Digits-only canonical phone for loyalty lookup and de-duplication (E.164 body without '+')
+    phone_normalized = Column(String(32), nullable=True, unique=True)
+    zip_code = Column(String(50), nullable=True)
+    
+    # Additional personal information
+    date_of_birth = Column(Date, nullable=True)  # For birthday campaigns and age segmentation
+    gender = Column(String(20), nullable=True)  # MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY
+    national_id = Column(String(50), nullable=True)  # National ID number
+    tax_id = Column(String(50), nullable=True)  # Tax ID for invoicing
+    
+    # Registration tracking
+    registration_source = Column(String(50), nullable=True)  # POS, MOBILE_APP, WEBSITE, SOCIAL_MEDIA, REFERRAL
+    
+    # Marketing preferences (GDPR/KVKK compliance)
+    marketing_consent = Column(Boolean, nullable=False, default=False)
+    sms_consent = Column(Boolean, nullable=False, default=False)
+    email_consent = Column(Boolean, nullable=False, default=False)
+    
+    # Customer preferences stored as JSON
+    # Example: {"favorite_products": [], "preferred_payment": "CREDIT_CARD", "language": "TR"}
+    preferences_json = Column(Text, nullable=True)
+    
+    description = Column(String(100))
+    
+    # Legacy loyalty points field (consider migrating to customer_loyalty table)
+    total_bonus_point = Column(Integer, nullable=False, default=0)
+    
+    # Status flags
+    is_administrator = Column(Boolean(False), default=False)
+    is_active = Column(Boolean(False), default=False)
+    is_walkin = Column(Boolean(False), default=False)  # Walk-in customer: receives all unassigned transactions
+    
+    # Timestamps
+    created_at = Column(DateTime, server_default=func.now())
+    login_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now())
+
+    def __repr__(self):
+        return f"<Customer(name='{self.name}', last_name='{self.last_name}')>"
+

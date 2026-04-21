@@ -1,0 +1,98 @@
+# Project Structure
+
+This document now reflects the implemented baseline structure and near-term expansion path.
+
+## Implemented Baseline (Current)
+
+```text
+SaleFlex.OFFICE/
+├── saleflex.py
+├── settings.toml
+├── requirements.txt
+├── README.md
+├── docs/
+│   └── *.md
+│
+├── core/
+│   ├── __init__.py
+│   └── logger.py
+│
+├── settings/
+│   ├── __init__.py
+│   └── settings.py
+│
+├── data_layer/
+│   ├── __init__.py
+│   ├── engine.py
+│   └── model/
+│       ├── __init__.py
+│       ├── crud_model.py
+│       ├── mixins.py
+│       └── definition/
+│           ├── __init__.py
+│           ├── *.py (copied model files from `SaleFlex.PyPOS/data_layer/model/definition`)
+│           ├── pos_terminal.py
+│           └── ... (100+ models)
+│
+├── office/
+│   ├── __init__.py
+│   ├── manager/
+│   │   ├── __init__.py
+│   │   └── application.py
+│   └── service/
+│       ├── __init__.py
+│       ├── bootstrap_loader.py
+│       └── pipos_bootstrap_service.py
+│
+└── user_interface/
+    ├── __init__.py
+    └── form/
+        ├── __init__.py
+        ├── startup_form.py
+        ├── login_form.py
+        └── module_launcher_form.py
+```
+
+## Planned Expansion (Next Phases)
+
+```text
+SaleFlex.OFFICE/
+├── data_layer/
+│   ├── engine.py
+│   ├── db_manager.py
+│   ├── migration/
+│   └── repository/
+├── office/
+│   ├── manager/
+│   │   ├── auth_manager.py
+│   │   ├── sync_manager.py
+│   │   ├── import_manager.py
+│   │   └── report_manager.py
+│   ├── service/
+│   │   ├── auth_service.py
+│   │   ├── catalog_service.py
+│   │   ├── campaign_service.py
+│   │   └── reporting_service.py
+│   ├── api/
+│   └── integration/
+└── user_interface/
+    ├── controls/
+    ├── navigation/
+    └── form/
+        ├── dashboard/
+        ├── reports/
+        └── system/
+```
+
+## Structure Rationale
+
+- Keep startup, UI, and service responsibilities isolated from day one.
+- Provide a clean bootstrap path (`StartupForm` -> preload -> `LoginForm` -> `ModuleLauncherForm`).
+- Keep model compatibility with PyPOS by reusing original model style in Office.
+- Extend only the fields required for store-level multi-terminal management.
+- Keep each new functional module additive as implementation grows.
+- Preserve static form philosophy while keeping keyboard-first desktop ergonomics.
+
+---
+
+[Back to index](README.md) | [Previous: Reporting](08-reporting.md) | [Next: Development Roadmap](10-development-roadmap.md)

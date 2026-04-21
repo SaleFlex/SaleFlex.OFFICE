@@ -1,0 +1,56 @@
+[app]
+name = "SaleFlex.OFFICE"
+version = "0.1.0-alpha"
+mode = "standalone" # standalone | gate
+store_id = "STORE-001"
+office_id = "OFFICE-001"
+icon = "static_files\\images\\saleflex-office.ico"
+
+[logging]
+level = "INFO" # DEBUG | INFO | WARNING | ERROR | CRITICAL
+console = true
+file = true
+log_dir = "logs"
+log_file = "saleflex-office.log"
+
+[database]
+engine = "sqlite" # sqlite | postgresql | mysql | oracle | mssql | firebird
+driver = ""
+user_name = ""
+password = ""
+database_name = "office.sqlite3"
+
+[network]
+host = "0.0.0.0"
+port = 8710
+api_prefix = "/api/v1"
+request_timeout_seconds = 15
+
+[gate]
+base_url = ""
+api_key = ""
+terminal_id = ""
+sync_interval_minutes = 15
+retry_attempts = 3
+timeout_seconds = 15
+
+[security]
+password_hash = "bcrypt"
+jwt_access_minutes = 30
+jwt_refresh_days = 7
+session_idle_timeout_minutes = 30
+
+[import]
+csv_enabled = true
+xml_enabled = true
+max_file_mb = 50
+staging_dir = "imports\\staging"
+archive_dir = "imports\\archive"
+error_dir = "imports\\errors"
+
+[reporting]
+dashboard_enabled = true
+csv_export_enabled = true
+pdf_export_enabled = true
+default_timezone = "UTC"
+currency_code = "USD"

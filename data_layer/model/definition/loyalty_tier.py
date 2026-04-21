@@ -1,0 +1,93 @@
+"""
+SaleFlex.PyPOS - Point of Sale Application
+
+Copyright (c) 2025 Ferhat Mousavi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+from sqlalchemy import Column, String, Boolean, DateTime, UUID, Text, ForeignKey, Numeric, Integer
+from sqlalchemy.sql import func
+from uuid import uuid4
+
+from data_layer.model.crud_model import Model
+from data_layer.model.crud_model import CRUD
+from data_layer.model.mixins import AuditMixin, SoftDeleteMixin
+
+
+class LoyaltyTier(Model, CRUD, AuditMixin, SoftDeleteMixin):
+    """
+    Defines loyalty membership tiers (e.g., Bronze, Silver, Gold, Platinum)
+    Each tier offers different benefits and requires different thresholds
+    """
+    def __init__(self, fk_loyalty_program_id=None, name=None, code=None, description=None,
+                 min_points_required=None, min_annual_spending=None, tier_level=None,
+                 points_multiplier=None, discount_percentage=None, special_benefits=None,
+                 color_code=None, icon=None, is_active=True, display_order=0):
+        Model.__init__(self)
+        CRUD.__init__(self)
+
+        self.fk_loyalty_program_id = fk_loyalty_program_id
+        self.name = name
+        self.code = code
+        self.description = description
+        self.min_points_required = min_points_required
+        self.min_annual_spending = min_annual_spending
+        self.tier_level = tier_level
+        self.points_multiplier = points_multiplier
+        self.discount_percentage = discount_percentage
+        self.special_benefits = special_benefits
+        self.color_code = color_code
+        self.icon = icon
+        self.is_active = is_active
+        self.display_order = display_order
+
+    __tablename__ = "loyalty_tier"
+
+    id = Column(UUID, primary_key=True, default=uuid4)
+    fk_loyalty_program_id = Column(UUID, ForeignKey('loyalty_program.id'), nullable=False)
+    
+    # Tier identification
+    name = Column(String(100), nullable=False)  # Bronze, Silver, Gold, Platinum
+    code = Column(String(50), nullable=False)  # BRONZE, SILVER, GOLD, PLATINUM
+    description = Column(Text, nullable=True)
+    
+    # Tier requirements (customer meets ANY of these criteria)
+    min_points_required = Column(Integer, nullable=True)  # Minimum lifetime points to reach this tier
+    min_annual_spending = Column(Numeric(18, 2), nullable=True)  # Minimum annual spending amount
+    
+    # Tier hierarchy
+    tier_level = Column(Integer, nullable=False, default=1)  # 1 = lowest tier, higher = better tier
+    
+    # Tier benefits
+    points_multiplier = Column(Numeric(5, 2), nullable=True, default=1.0)  # Example: 1.5 = earn 50% more points
+    discount_percentage = Column(Numeric(5, 2), nullable=True)  # Additional discount percentage for tier members
+    special_benefits = Column(Text, nullable=True)  # Description of special benefits (free shipping, priority support, etc.)
+    
+    # Visual customization
+    color_code = Column(String(20), nullable=True)  # Hex color code for UI display
+    icon = Column(String(100), nullable=True)  # Icon name or path
+    
+    # Status and ordering
+    is_active = Column(Boolean, nullable=False, default=True)
+    display_order = Column(Integer, nullable=False, default=0)
+
+    def __repr__(self):
+        return f"<LoyaltyTier(name='{self.name}', level={self.tier_level})>"
+
