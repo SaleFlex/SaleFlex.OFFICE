@@ -23,6 +23,7 @@ from .department_sub_group import DepartmentSubGroup
 from .district import District
 from .form import Form
 from .form_control import FormControl
+from .form_control_tab import FormControlTab
 from .label_value import LabelValue
 from .payment_type import PaymentType
 from .pos_settings import PosSettings
@@ -128,6 +129,7 @@ __all__ = [
     'District',
     'Form',
     'FormControl',
+    'FormControlTab',
     'LabelValue',
     'PaymentType',
     'PosSettings',

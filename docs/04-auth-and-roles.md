@@ -4,7 +4,8 @@ This document defines role and access policy for `SaleFlex.OFFICE`.
 
 ## Access Scope
 
-`SaleFlex.OFFICE` is intended for management-level users, not cashier workflows.
+`SaleFlex.OFFICE` is intended for management-level users. Cashier-related maintenance is managed
+by office users via administrative forms, not by cashier self-service sessions.
 
 Primary Office roles:
 
@@ -52,12 +53,15 @@ The current baseline login form is desktop/keyboard oriented:
 - Enter-key login trigger
 - Inline login feedback message area
 
-At this phase, authentication uses a temporary placeholder rule for startup integration testing:
+Authentication is now backed by persistent cashier records in the local Office database:
 
-- Allowed users: `admin`, `manager`
-- Temporary verification: `username == password`
+- Username is matched against `cashier.user_name`.
+- Password is matched against `cashier.password`.
+- Only active users (`cashier.is_active = true`) are allowed to log in.
+- Soft-deleted users (`cashier.is_deleted = true`) are excluded from authentication.
 
-This placeholder will be replaced by real persistent user authentication in the next implementation steps.
+This implementation is the first persistent login step. Password hashing and broader policy controls
+remain part of the hardening roadmap.
 
 ## POS and Office Role Consistency
 

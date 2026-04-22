@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from office.service.auth_service import AuthService
 from office.service.bootstrap_loader import BootstrapContext
 from settings.settings import Settings
 
@@ -29,6 +30,7 @@ class LoginForm(QWidget):
     def __init__(self, bootstrap_context: BootstrapContext, parent: QWidget | None = None) -> None:
         super().__init__(parent=parent)
         self.bootstrap_context = bootstrap_context
+        self.auth_service = AuthService()
         self.setObjectName("loginRoot")
         self.setWindowTitle(f"{Settings().app_name} - Login")
         self.setMinimumSize(1024, 640)
@@ -101,27 +103,24 @@ class LoginForm(QWidget):
         self._username_input.setFocus()
 
     def _on_login_clicked(self) -> None:
-        """
-        Validate login fields and perform a temporary placeholder authentication.
-        """
+        """Validate login fields and authenticate with cashier records."""
         username = self._username_input.text().strip()
         password = self._password_input.text()
 
         if not username or not password:
+            self._status_label.setStyleSheet("color: #b91c1c;")
             self._status_label.setText("Please enter both username and password.")
             return
 
-        # Placeholder authentication for initial bootstrap stage.
-        # TODO: Replace with AuthService/AuthManager backed by database and role permissions.
-        accepted_users = set(self.bootstrap_context.default_users)
-        if username in accepted_users and password == username:
+        auth_result = self.auth_service.authenticate(username=username, password=password)
+        if auth_result.success:
             self._status_label.setStyleSheet("color: #166534;")
-            self._status_label.setText(f"Login successful. Welcome {username}.")
-            self.login_success.emit(username)
+            self._status_label.setText(auth_result.message)
+            self.login_success.emit(auth_result.username)
             return
 
         self._status_label.setStyleSheet("color: #b91c1c;")
-        self._status_label.setText("Invalid credentials. (Temporary rule: username=password)")
+        self._status_label.setText(auth_result.message)
 
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)

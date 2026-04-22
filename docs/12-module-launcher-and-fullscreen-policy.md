@@ -23,24 +23,36 @@ The login screen now follows a centered-card layout inside a fullscreen window:
 
 After successful authentication, the application opens `ModuleLauncherForm`.
 
-The launcher currently provides a static module button list as the first navigation shell:
+The launcher currently provides a module button list as the first navigation shell:
 
-1. Product Management
-2. Campaign Management
-3. Customer Management
-4. Reports
-5. Bulk Import
-6. Data Sync and Backup
-7. System Settings
-8. User and Role Management
+1. Cashier Management
+2. Product Management
+3. Campaign Management
+4. Customer Management
+5. POS Management
+6. Form Management
+7. Warehouse Management
+8. Reports
+9. Bulk Import
+10. Data Sync and Backup
+11. System Settings
 
-The button actions are placeholders in the current baseline and will be connected to module forms in upcoming iterations.
+Current button behavior:
+
+- `Cashier Management` is connected and opens `CashierManagementForm`.
+- `Product Management` is connected and opens `ProductManagementForm`.
+- `Campaign Management` is connected and opens `CampaignManagementForm`.
+- `Customer Management` is connected and opens `CustomerManagementForm`.
+- `POS Management` is connected and opens `PosManagementForm`.
+- `Form Management` is connected and opens `FormManagementForm`.
+- `Warehouse Management` is connected and opens `WarehouseManagementForm`.
+- Remaining module buttons still behave as placeholders.
 
 ## Runtime Transition
 
 Current high-level transition:
 
-`StartupForm` -> `LoginForm` -> `ModuleLauncherForm`
+`StartupForm` -> `LoginForm` -> `ModuleLauncherForm` -> `CashierManagementForm` or `ProductManagementForm` or `CampaignManagementForm` or `CustomerManagementForm` or `PosManagementForm` or `FormManagementForm` or `WarehouseManagementForm`
 
 Transition is coordinated in `office/manager/application.py`.
 

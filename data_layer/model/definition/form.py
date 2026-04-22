@@ -37,7 +37,8 @@ class Form(Model, CRUD, AuditMixin, SoftDeleteMixin):
                  width=None, height=None, start_position=None, form_border_style=None, caption=None,
                  icon=None, image=None, back_color=None, fore_color=None, show_status_bar=False, 
                  show_in_taskbar=False, use_virtual_keyboard=False, is_visible=True, is_startup=False,
-                 display_mode=None, fk_cashier_create_id=None, fk_cashier_update_id=None):
+                 display_mode=None, is_shared_across_pos=True, fk_pos_terminal_id=None,
+                 fk_cashier_create_id=None, fk_cashier_update_id=None):
         Model.__init__(self)
         CRUD.__init__(self)
 
@@ -61,6 +62,8 @@ class Form(Model, CRUD, AuditMixin, SoftDeleteMixin):
         self.is_visible = is_visible
         self.is_startup = is_startup
         self.display_mode = display_mode
+        self.is_shared_across_pos = is_shared_across_pos
+        self.fk_pos_terminal_id = fk_pos_terminal_id
         self.fk_cashier_create_id = fk_cashier_create_id
         self.fk_cashier_update_id = fk_cashier_update_id
 
@@ -87,9 +90,21 @@ class Form(Model, CRUD, AuditMixin, SoftDeleteMixin):
     is_visible = Column(Boolean, nullable=False, default=True)
     is_startup = Column(Boolean, nullable=False, default=False)
     display_mode = Column(String(50), nullable=True)  # MAIN, CUSTOMER, BOTH
+    is_shared_across_pos = Column(Boolean, nullable=False, default=True)
+    fk_pos_terminal_id = Column(UUID, ForeignKey("pos_terminal.id"), nullable=True, index=True)
 
     # Relationship to form controls
     controls = relationship("FormControl", back_populates="form", foreign_keys="[FormControl.fk_form_id]")
+
+    def is_available_for_pos(self, pos_terminal_id: str | UUID | None) -> bool:
+        """Return True when this form can be used on the given POS terminal."""
+        if self.is_shared_across_pos:
+            return True
+        if pos_terminal_id is None:
+            return False
+        if self.fk_pos_terminal_id is None:
+            return False
+        return str(self.fk_pos_terminal_id) == str(pos_terminal_id)
 
     def __repr__(self):
         return f"<Form(name='{self.name}', form_no='{self.form_no}')>"

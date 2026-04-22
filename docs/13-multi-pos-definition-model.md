@@ -30,8 +30,13 @@ While preserving original models, Office adds store-level terminal scope:
 - Updated model: `Store`
   - `store_code`
   - `office_code`
+- Updated model: `Form`
+  - `is_shared_across_pos`
+  - `fk_pos_terminal_id`
+  - `is_available_for_pos(pos_terminal_id)` helper for terminal-level form eligibility checks
 
-These additions enable one store to manage and identify multiple POS applications cleanly.
+These additions enable one store to manage and identify multiple POS applications cleanly, including
+form metadata that can be either terminal-specific or shared across all terminals.
 
 ## Runtime Flow
 

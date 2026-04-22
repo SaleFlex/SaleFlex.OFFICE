@@ -4,9 +4,11 @@ Database engine singleton for SaleFlex.OFFICE data layer.
 
 from contextlib import contextmanager
 from pathlib import Path
+import shutil
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from settings.settings import Settings
 
 
 class Engine:
@@ -22,10 +24,20 @@ class Engine:
         if Engine._initialized:
             return
 
+        settings = Settings()
         project_root = Path(__file__).resolve().parents[1]
-        db_dir = project_root / "database"
-        db_dir.mkdir(parents=True, exist_ok=True)
-        db_path = db_dir / "office.sqlite3"
+        db_file_name = settings.database_name.strip() or "office.sqlite3"
+        db_path = project_root / db_file_name
+        legacy_db_path = project_root / "database" / db_file_name
+        legacy_default_db_path = project_root / "database" / "office.sqlite3"
+
+        if legacy_db_path.exists() and not db_path.exists():
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(legacy_db_path), str(db_path))
+        elif legacy_default_db_path.exists() and not db_path.exists():
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(legacy_default_db_path), str(db_path))
+        self.db_path = db_path
 
         self.engine = create_engine(
             f"sqlite:///{db_path}",

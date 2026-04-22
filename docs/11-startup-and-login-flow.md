@@ -16,6 +16,12 @@ This document describes the first implemented runtime flow for `SaleFlex.OFFICE`
 
 This sequence ensures that required startup data is loaded before login interaction begins.
 
+During bootstrap, Office now also:
+
+- creates database/tables on first startup when DB file is missing
+- inserts full initial seed data pipeline from `data_layer/db_init_data`
+- includes default users (`admin`, `jdoe`, `jpace`) and default terminal setup (`STORE-001`, `POS-001`)
+
 ## Runtime Components
 
 - `office/manager/application.py`
@@ -40,18 +46,20 @@ The current operational forms are intentionally non-touch-oriented and fullscree
 - `ModuleLauncherForm` opens in fullscreen and lists module buttons for navigation.
 - Enter-key login support remains available via default button.
 
-## Placeholder Authentication Rule
+## Implemented Authentication Rule
 
-Until database-backed authentication is connected:
+`LoginForm` now delegates authentication to `AuthService`:
 
-- Allowed startup users: `admin`, `manager`
-- Temporary rule: `username == password`
+- user lookup by `cashier.user_name`
+- password validation by `cashier.password`
+- login allowed only when `cashier.is_active = true`
+- soft-deleted users (`cashier.is_deleted = true`) are rejected
 
-This is only a bootstrap placeholder and will be replaced by `AuthService` + persistent user data.
+On successful login, `cashier.login_at` is updated and the module launcher transition continues.
 
 ## Next Planned Steps
 
-1. Replace placeholder auth with real hashed password verification.
+1. Replace plain-text password comparison with hashed password verification.
 2. Add session state and role-based navigation guard.
 3. Wire module launcher buttons to real module shell/forms.
 4. Expand startup loader with reference caches and integration prechecks.

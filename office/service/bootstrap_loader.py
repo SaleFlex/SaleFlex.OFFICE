@@ -8,6 +8,7 @@ import time
 from dataclasses import dataclass
 from typing import Callable
 
+from data_layer.db_manager import initialize_database
 from settings.settings import Settings
 
 
@@ -22,7 +23,6 @@ class BootstrapContext:
     store_id: str
     office_id: str
     available_roles: tuple[str, ...]
-    default_users: tuple[str, ...]
 
 
 class BootstrapDataLoader:
@@ -36,7 +36,7 @@ class BootstrapDataLoader:
         time.sleep(0.15)
 
         progress_callback("Preparing initial reference cache...")
-        # TODO: Replace with real preload pipelines as Office data modules are added.
+        initialize_database()
         time.sleep(0.2)
 
         progress_callback("Validating runtime mode and environment...")
@@ -54,5 +54,4 @@ class BootstrapDataLoader:
             store_id=settings.app_store_id,
             office_id=settings.app_office_id,
             available_roles=("admin", "manager"),
-            default_users=("admin", "manager"),
         )

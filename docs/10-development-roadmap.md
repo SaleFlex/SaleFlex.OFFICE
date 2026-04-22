@@ -7,7 +7,7 @@ This roadmap defines a practical path from project bootstrap to production-ready
 - [x] Project bootstrap and package structure
 - [x] `settings.toml` parser and mode routing
 - [~] Database initialization and base models (PyPOS-compatible model set copied to Office)
-- [~] Authentication and session basics (keyboard-first login UI + placeholder rule active)
+- [~] Authentication and session basics (keyboard-first login UI + cashier-table credential validation active)
 - [~] Static UI shell (startup splash + login implemented, dashboard pending)
 - [ ] REST API skeleton with versioned routes
 

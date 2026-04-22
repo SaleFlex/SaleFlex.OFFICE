@@ -1,0 +1,138 @@
+"""
+SaleFlex.PyPOS - Point of Sale Application
+
+Copyright (c) 2025-2026 Ferhat Mousavi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+import enum
+
+
+class FormName(enum.Enum):
+    """
+    Enum representing different names of forms used in the system.
+    
+    Form names are used throughout the application to identify specific forms.
+    These names work together with ControlName and EventName enums to create
+    a complete form and event handling system.
+    
+    Usage Examples:
+    --------------
+    - In application.py: Use FormName.LOGIN instead of 'LOGIN' string
+    - In event handlers: Use FormName.SALE when navigating to sales form
+    - In dynamic_renderer.py: Use FormName when looking up forms by name
+    
+    Form Categories:
+    ---------------
+    Authentication Forms (LOGIN, LOGIN_EXT, LOGIN_SERVICE):
+        - LOGIN: Standard login form with username/password
+        - LOGIN_EXT: Extended login with additional authentication
+        - LOGIN_SERVICE: Service/maintenance personnel login
+        - Controls in these forms typically use ControlName.CASHIER_NAME,
+          ControlName.PASSWORD, ControlName.LOGIN, ControlName.LOGOUT
+    
+    Transaction Forms (SALE, PAYMENT, REFUND, VOID, SUSPENDED_SALES_MARKET):
+        - SALE: Main sales transaction form
+        - PAYMENT: Full-screen payment entry (all payment types, numpad, lists); opened from SALE (dual CREDIT CARD → PAYMENT)
+        - REFUND: Product/transaction refund form
+        - VOID: Transaction voiding form
+        - SUSPENDED_SALES_MARKET: List of suspended receipts (market retail); other sectors may use dedicated forms later (e.g. tables for restaurants)
+    
+    Configuration Forms (SETTINGS_MENU, POS_SETTINGS, LOYALTY_SETTINGS, PARAMETER, CASHIER_CONFIG):
+        - SETTINGS_MENU: Hub (POS / Loyalty / Campaign settings shortcuts)
+        - POS_SETTINGS: POS hardware and backend fields (former first settings tab)
+        - LOYALTY_SETTINGS: Loyalty program and policies (former loyalty tabs)
+        - PARAMETER: Parameter configuration form
+        - CASHIER_CONFIG: Cashier-specific configuration
+        - Controls in these forms use ControlName values like BARCODE_LENGTH,
+          IMAGE_FOLDER, DEBUG_MODE_STATE, etc.
+    
+    Operational Forms (CLOSURE, REPORT):
+        - CLOSURE: End-of-shift operations with closure history list
+        - CLOSURE_DETAIL: Detail view of a selected closure record
+        - CLOSURE_RECEIPTS: List of receipts belonging to a selected closure
+        - CLOSURE_RECEIPT_DETAIL: Detail view of a selected receipt within a closure
+        - REPORT: Reporting and analytics form
+    
+    Restaurant Forms (TABLE, ORDER, CHECK):
+        - TABLE: Table management for restaurant operations
+        - ORDER: Order entry and management
+        - CHECK: Check/bill handling
+    
+    Business Forms (CUSTOMER, EMPLOYEE, STOCK, WAREHOUSE):
+        - CUSTOMER: Customer information and management
+        - EMPLOYEE: Employee management
+        - STOCK: Stock/inventory management
+        - WAREHOUSE: Warehouse operations
+    
+    Other Forms (FUNCTION, MENU, SERVICE, RESERVATION):
+        - FUNCTION: Function menu/selection
+        - MENU: General menu form
+        - MAIN_MENU: Main menu form with navigation options
+        - SERVICE: Service operations
+        - RESERVATION: Reservation management
+        - CASHIER_PERFORMANCE_TARGET: Cashier performance targets
+        - CASHIER: Cashier management and information form
+    """
+    
+    NONE = 0           # No form selected.
+    SALE = 1           # Sale transaction form.
+    LOGIN = 2          # Login form.
+    LOGIN_EXT = 3      # Extended login form.
+    LOGIN_SERVICE = 4  # Service login form.
+    SERVICE = 5        # Service-related form.
+    SETTINGS_MENU = 6  # Settings hub (POS / Loyalty / Campaign).
+    CASHIER_CONFIG = 7  # Cashier configuration form.
+    PARAMETER = 8      # Parameter configuration form.
+    REPORT = 9         # Report form.
+    FUNCTION = 10      # Function selection form.
+    CUSTOMER = 11      # Customer-related form.
+    VOID = 12          # Form for voiding a transaction.
+    REFUND = 13        # Refund transaction form.
+    STOCK = 14         # Stock management form.
+    CLOSURE = 15       # End of day closure form.
+    TABLE = 16         # Table management form (e.g., for restaurants).
+    ORDER = 17         # Order management form.
+    CHECK = 18         # Check payment form.
+    EMPLOYEE = 19      # Employee management form.
+    RESERVATION = 20   # Reservation form.
+    WAREHOUSE = 21     # Warehouse form.
+    CASHIER_PERFORMANCE_TARGET = 22      # Cashier performance target form.
+    MAIN_MENU = 23     # Main menu form with navigation to other forms.
+    SUB_MENU = 24      # Sub menu form with navigation to other forms.
+    CASHIER = 25       # Cashier management form for adding/editing cashier information.
+    SUSPENDED_SALES_MARKET = 26  # Market sector: list suspended (pending) sale documents.
+    PRODUCT_LIST = 27            # Product list / search form.
+    PRODUCT_DETAIL = 28          # Product detail form (tab view).
+    CLOSURE_DETAIL = 29          # Closure detail form (key/value summary of a selected closure).
+    CLOSURE_RECEIPTS = 30        # Closure receipts list form (receipts belonging to a closure).
+    CLOSURE_RECEIPT_DETAIL = 31  # Closure receipt detail form (key/value detail of a receipt).
+    STOCK_INQUIRY = 32           # Stock inquiry form — product stock levels across all locations.
+    STOCK_IN = 33                # Goods receipt (stock-in) form — receive items into SALES_FLOOR.
+    STOCK_ADJUSTMENT = 34        # Manual stock adjustment / cycle-count correction form.
+    STOCK_MOVEMENT = 35          # Stock movement history form — audit trail per product.
+    CUSTOMER_LIST = 36           # Customer list / search form (accessible from Main Menu).
+    CUSTOMER_DETAIL = 37         # Customer detail form (tab view: info + activity history).
+    CUSTOMER_SELECT = 38         # Customer selection form (accessible from SALE form; SELECT button assigns customer and returns to SALE).
+    PAYMENT = 39                 # Dedicated payment screen (NUMPAD, payment list, amount table, payment-type buttons); opened from SALE via FUNC + dual CREDIT CARD / PAYMENT.
+    CAMPAIGN_LIST = 40           # Campaign list / search (administrators).
+    CAMPAIGN_DETAIL = 41         # Campaign detail / edit modal (administrators).
+    POS_SETTINGS = 42            # POS-only settings (single panel).
+    LOYALTY_SETTINGS = 43        # Loyalty settings (tabbed program + policies).

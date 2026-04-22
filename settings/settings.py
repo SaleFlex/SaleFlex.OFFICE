@@ -26,6 +26,8 @@ class SettingsData:
     logging_file: bool
     logging_dir: str
     logging_file_name: str
+    database_engine: str
+    database_name: str
     security_password_hash: str
     security_session_idle_timeout_minutes: int
 
@@ -48,6 +50,7 @@ class Settings:
 
         app = _as_dict(data.get("app"))
         logging_data = _as_dict(data.get("logging"))
+        database = _as_dict(data.get("database"))
         security = _as_dict(data.get("security"))
 
         self._data = SettingsData(
@@ -62,6 +65,8 @@ class Settings:
             logging_file=bool(logging_data.get("file", True)),
             logging_dir=str(logging_data.get("log_dir", "logs")),
             logging_file_name=str(logging_data.get("log_file", "saleflex-office.log")),
+            database_engine=str(database.get("engine", "sqlite")),
+            database_name=str(database.get("database_name", "office.sqlite3")),
             security_password_hash=str(security.get("password_hash", "bcrypt")),
             security_session_idle_timeout_minutes=int(
                 security.get("session_idle_timeout_minutes", 30)
@@ -111,6 +116,14 @@ class Settings:
     @property
     def logging_file_name(self) -> str:
         return self._data.logging_file_name
+
+    @property
+    def database_engine(self) -> str:
+        return self._data.database_engine
+
+    @property
+    def database_name(self) -> str:
+        return self._data.database_name
 
     @property
     def security_password_hash(self) -> str:
