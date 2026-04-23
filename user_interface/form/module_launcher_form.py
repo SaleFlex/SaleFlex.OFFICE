@@ -23,9 +23,13 @@ from settings.settings import Settings
 from user_interface.form.campaign_management_form import CampaignManagementForm
 from user_interface.form.cashier_management_form import CashierManagementForm
 from user_interface.form.customer_management_form import CustomerManagementForm
+from user_interface.form.definitions_management_form import DefinitionsManagementForm
 from user_interface.form.form_management_form import FormManagementForm
+from user_interface.form.loyalty_management_form import LoyaltyManagementForm
 from user_interface.form.pos_management_form import PosManagementForm
 from user_interface.form.product_management_form import ProductManagementForm
+from user_interface.form.sync_management_form import SyncManagementForm
+from user_interface.form.system_settings_form import SystemSettingsForm
 from user_interface.form.warehouse_management_form import WarehouseManagementForm
 
 
@@ -48,17 +52,23 @@ class ModuleLauncherForm(QWidget):
         self._product_management_form: ProductManagementForm | None = None
         self._campaign_management_form: CampaignManagementForm | None = None
         self._customer_management_form: CustomerManagementForm | None = None
+        self._loyalty_management_form: LoyaltyManagementForm | None = None
         self._pos_management_form: PosManagementForm | None = None
         self._form_management_form: FormManagementForm | None = None
         self._warehouse_management_form: WarehouseManagementForm | None = None
+        self._definitions_management_form: DefinitionsManagementForm | None = None
+        self._sync_management_form: SyncManagementForm | None = None
+        self._system_settings_form: SystemSettingsForm | None = None
         self._module_names = (
             "Cashier Management",
             "Product Management",
             "Campaign Management",
             "Customer Management",
+            "Loyalty Management",
             "POS Management",
             "Form Management",
             "Warehouse Management",
+            "Definitions Management",
             "Reports",
             "Bulk Import",
             "Data Sync and Backup",
@@ -71,7 +81,7 @@ class ModuleLauncherForm(QWidget):
         title_label.setFont(QFont("Segoe UI", 22, QFont.Bold))
 
         subtitle_label = QLabel(
-            f"User: {self.username}  |  Store: {bootstrap_context.store_id}  |  Office: {bootstrap_context.office_id}"
+            f"User: {self.username}  |  Store: {bootstrap_context.store_code}  |  Office: {bootstrap_context.office_code}"
         )
         subtitle_label.setObjectName("launcherSubtitle")
         subtitle_label.setAlignment(Qt.AlignHCenter)
@@ -134,6 +144,9 @@ class ModuleLauncherForm(QWidget):
         if module_name.startswith("Customer Management"):
             self._open_customer_management()
             return
+        if module_name.startswith("Loyalty Management"):
+            self._open_loyalty_management()
+            return
         if module_name.startswith("POS Management"):
             self._open_pos_management()
             return
@@ -142,6 +155,15 @@ class ModuleLauncherForm(QWidget):
             return
         if module_name.startswith("Warehouse Management"):
             self._open_warehouse_management()
+            return
+        if module_name.startswith("Definitions Management"):
+            self._open_definitions_management()
+            return
+        if module_name.startswith("Data Sync and Backup"):
+            self._open_sync_management()
+            return
+        if module_name.startswith("System Settings"):
+            self._open_system_settings()
             return
         self.setWindowTitle(f"{Settings().app_name} - {module_name} (coming soon)")
 
@@ -186,12 +208,20 @@ class ModuleLauncherForm(QWidget):
             self._campaign_management_form.close()
         if self._customer_management_form is not None:
             self._customer_management_form.close()
+        if self._loyalty_management_form is not None:
+            self._loyalty_management_form.close()
         if self._pos_management_form is not None:
             self._pos_management_form.close()
         if self._form_management_form is not None:
             self._form_management_form.close()
         if self._warehouse_management_form is not None:
             self._warehouse_management_form.close()
+        if self._definitions_management_form is not None:
+            self._definitions_management_form.close()
+        if self._sync_management_form is not None:
+            self._sync_management_form.close()
+        if self._system_settings_form is not None:
+            self._system_settings_form.close()
         QApplication.instance().quit()
 
     def _open_campaign_management(self) -> None:
@@ -215,6 +245,17 @@ class ModuleLauncherForm(QWidget):
         self._customer_management_form.show()
         self._customer_management_form.raise_()
         self._customer_management_form.activateWindow()
+
+    def _open_loyalty_management(self) -> None:
+        """Open loyalty management form as module workflow."""
+        if self._loyalty_management_form is None:
+            self._loyalty_management_form = LoyaltyManagementForm(
+                bootstrap_context=self.bootstrap_context,
+                username=self.username,
+            )
+        self._loyalty_management_form.show()
+        self._loyalty_management_form.raise_()
+        self._loyalty_management_form.activateWindow()
 
     def _open_pos_management(self) -> None:
         """Open POS management form as module workflow."""
@@ -248,6 +289,39 @@ class ModuleLauncherForm(QWidget):
         self._warehouse_management_form.show()
         self._warehouse_management_form.raise_()
         self._warehouse_management_form.activateWindow()
+
+    def _open_definitions_management(self) -> None:
+        """Open definitions management form as module workflow."""
+        if self._definitions_management_form is None:
+            self._definitions_management_form = DefinitionsManagementForm(
+                bootstrap_context=self.bootstrap_context,
+                username=self.username,
+            )
+        self._definitions_management_form.show()
+        self._definitions_management_form.raise_()
+        self._definitions_management_form.activateWindow()
+
+    def _open_sync_management(self) -> None:
+        """Open data sync and backup form as module workflow."""
+        if self._sync_management_form is None:
+            self._sync_management_form = SyncManagementForm(
+                bootstrap_context=self.bootstrap_context,
+                username=self.username,
+            )
+        self._sync_management_form.show()
+        self._sync_management_form.raise_()
+        self._sync_management_form.activateWindow()
+
+    def _open_system_settings(self) -> None:
+        """Open system settings form as module workflow."""
+        if self._system_settings_form is None:
+            self._system_settings_form = SystemSettingsForm(
+                bootstrap_context=self.bootstrap_context,
+                username=self.username,
+            )
+        self._system_settings_form.show()
+        self._system_settings_form.raise_()
+        self._system_settings_form.activateWindow()
 
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)

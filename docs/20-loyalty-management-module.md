@@ -1,15 +1,18 @@
 # Loyalty Management Module
 
-This document describes the dedicated loyalty management workflows added under the `Customer Management` module in `SaleFlex.OFFICE`.
+This document describes the dedicated loyalty management workflows in `SaleFlex.OFFICE`.
 
 ## Purpose
 
-`LoyaltyManagementForm` centralizes loyalty definition tables and customer loyalty operation tables in one module-level workspace.
-It is opened from `CustomerManagementForm` by the `Open Loyalty Management` action.
+`LoyaltyManagementForm` centralizes loyalty definition tables, customer loyalty operation tables, and coupon tracking in one module-level workspace.
+
+It can be opened in two ways:
+- Directly from the **Module Launcher** by clicking the `Loyalty Management` button.
+- From `CustomerManagementForm` by the `Open Loyalty Management` action.
 
 ## Implemented Tabs
 
-The form is organized into eight tabs:
+The form is organized into ten tabs:
 
 1. **Loyalty Programs**
    - Create, update, and soft delete loyalty program definitions.
@@ -35,6 +38,15 @@ The form is organized into eight tabs:
 8. **Loyalty Operations**
    - Read-only loyalty usage listing inside the module.
    - Filters by loyalty program, customer, and active status.
+9. **Customer Coupons**
+   - Read-only listing of all coupons from the `coupon` table.
+   - Filterable by customer, campaign, and active/inactive status.
+   - Displays: coupon code, name, type, linked campaign, assigned customer, validity period, usage limit, usage count, and sent status.
+   - Public coupons (not assigned to a specific customer) are also visible.
+10. **Coupon Usage History**
+    - Read-only listing of coupon redemption records from the `coupon_usage` table.
+    - Filterable by customer and by specific coupon.
+    - Displays: coupon code, coupon name, customer, discount amount applied, usage date, store, cashier, and notes.
 
 ## Additional Operations Form
 
@@ -56,10 +68,13 @@ Loyalty definition workflows are coordinated by `office/service/loyalty_manageme
 
 Service responsibilities:
 
-- Typed view model generation for loyalty definition and operations tabs.
+- Typed view model generation for loyalty definition, operations, and coupon tabs.
 - CRUD validation and uniqueness checks for loyalty programs, tiers, rules, and policy tables.
 - Soft delete lifecycle handling for all loyalty definition tables.
 - Loyalty operations aggregation (program/customer filters, points and transaction summary fields).
+- Coupon listing with campaign, customer, and active status filters (`list_coupons`).
+- Coupon usage history listing with customer and coupon filters (`list_coupon_usages`).
+- Campaign and coupon lookup helpers for filter combo population (`list_campaign_lookups`, `list_coupon_lookups`).
 
 ## Data Models Used
 
@@ -72,6 +87,9 @@ The module currently uses:
 - `loyalty_redemption_policy`
 - `customer_loyalty`
 - `loyalty_point_transaction`
+- `coupon`
+- `coupon_usage`
+- `campaign`
 - `customer`
 - `store`
 - `cashier`
@@ -81,6 +99,8 @@ The module currently uses:
 
 - Date and datetime fields are entered as text (`YYYY-MM-DD` and `YYYY-MM-DD HH:MM`).
 - All delete operations in this module use soft delete strategy.
+- The `Customer Coupons` and `Coupon Usage History` tabs are read-only; coupon creation and management is handled via the Campaign Management module.
+- Coupons with no assigned customer (`fk_customer_id IS NULL`) are public coupons and are visible in the Customer Coupons tab without a customer filter.
 
 ---
 

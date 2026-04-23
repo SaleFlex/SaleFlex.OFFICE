@@ -39,7 +39,7 @@ class LoyaltyOperationsForm(QWidget):
         self.bootstrap_context = bootstrap_context
         self.username = username
         self.loyalty_service = LoyaltyManagementService()
-        self.customer_service = CustomerManagementService(store_code=bootstrap_context.store_id)
+        self.customer_service = CustomerManagementService(store_code=bootstrap_context.store_code)
         self.setWindowTitle(f"{Settings().app_name} - Loyalty Operations")
         self.setMinimumSize(1280, 720)
         self._build_ui()
@@ -49,7 +49,7 @@ class LoyaltyOperationsForm(QWidget):
         title = QLabel("Loyalty Operations")
         title.setFont(QFont("Segoe UI", 18, QFont.Bold))
         subtitle = QLabel(
-            f"User: {self.username}  |  Store: {self.bootstrap_context.store_id}  |  Office: {self.bootstrap_context.office_id}"
+            f"User: {self.username}  |  Store: {self.bootstrap_context.store_code}  |  Office: {self.bootstrap_context.office_code}"
         )
         subtitle.setStyleSheet("color: #475569;")
 

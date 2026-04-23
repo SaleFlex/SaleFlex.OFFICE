@@ -41,8 +41,17 @@ SaleFlex.OFFICE/
 │   │   └── application.py
 │   └── service/
 │       ├── __init__.py
+│       ├── auth_service.py
 │       ├── bootstrap_loader.py
-│       └── pipos_bootstrap_service.py
+│       ├── campaign_management_service.py
+│       ├── cashier_management_service.py
+│       ├── customer_management_service.py
+│       ├── definitions_management_service.py
+│       ├── loyalty_management_service.py
+│       ├── pos_management_service.py
+│       ├── product_management_service.py
+│       ├── sync_management_service.py
+│       └── warehouse_management_service.py
 │
 └── user_interface/
     ├── __init__.py
@@ -50,7 +59,19 @@ SaleFlex.OFFICE/
         ├── __init__.py
         ├── startup_form.py
         ├── login_form.py
-        └── module_launcher_form.py
+        ├── module_launcher_form.py
+        ├── cashier_management_form.py
+        ├── product_management_form.py
+        ├── campaign_management_form.py
+        ├── customer_management_form.py
+        ├── loyalty_management_form.py
+        ├── loyalty_operations_form.py
+        ├── pos_management_form.py
+        ├── form_management_form.py
+        ├── warehouse_management_form.py
+        ├── warehouse_operations_form.py
+        ├── definitions_management_form.py
+        └── sync_management_form.py
 ```
 
 ## Planned Expansion (Next Phases)

@@ -20,8 +20,8 @@ class BootstrapContext:
     """Data loaded during startup and shared with the first UI forms."""
 
     app_mode: str
-    store_id: str
-    office_id: str
+    store_code: str
+    office_code: str
     available_roles: tuple[str, ...]
 
 
@@ -46,12 +46,21 @@ class BootstrapDataLoader:
             )
         time.sleep(0.15)
 
+        progress_callback("Starting REST API server for POS terminals...")
+        from api.server import start_api_server
+        start_api_server(
+            host=settings.network_host,
+            port=settings.network_port,
+            access_log=settings.network_access_log,
+        )
+        time.sleep(0.1)
+
         progress_callback("Building startup context for login...")
         time.sleep(0.1)
 
         return BootstrapContext(
             app_mode=settings.app_mode,
-            store_id=settings.app_store_id,
-            office_id=settings.app_office_id,
+            store_code=settings.app_store_code,
+            office_code=settings.app_office_code,
             available_roles=("admin", "manager"),
         )

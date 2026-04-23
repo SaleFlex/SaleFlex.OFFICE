@@ -173,7 +173,7 @@ class WarehouseManagementService:
                 WarehouseView(
                     id=str(warehouse.id),
                     store_id=str(warehouse.fk_store_id) if warehouse.fk_store_id else None,
-                    store_label=store.name if store and store.name else "",
+                    store_label=f"{store.store_code or ''} - {store.brand_name or store.company_name or ''}".strip(" -") if store else "",
                     name=warehouse.name or "",
                     code=warehouse.code or "",
                     warehouse_type=warehouse.warehouse_type or "",
@@ -940,10 +940,16 @@ class WarehouseManagementService:
             rows = (
                 session.query(Store)
                 .filter(Store.is_deleted.is_(False))
-                .order_by(asc(Store.name))
+                .order_by(asc(Store.store_code))
                 .all()
             )
-            return [LookupItem(id=str(row.id), label=row.name or "") for row in rows]
+            return [
+                LookupItem(
+                    id=str(row.id),
+                    label=f"{row.store_code or ''} - {row.brand_name or row.company_name or ''}".strip(" -"),
+                )
+                for row in rows
+            ]
 
     def list_warehouse_lookups(self) -> list[LookupItem]:
         with self._engine.get_session() as session:

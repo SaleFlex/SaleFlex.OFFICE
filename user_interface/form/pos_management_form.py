@@ -48,7 +48,7 @@ class PosManagementForm(QWidget):
         super().__init__(parent=parent)
         self.bootstrap_context = bootstrap_context
         self.username = username
-        self.service = PosManagementService(store_code=bootstrap_context.store_id)
+        self.service = PosManagementService(store_code=bootstrap_context.store_code)
         self.setWindowTitle(f"{Settings().app_name} - POS Management")
         self.setMinimumSize(1360, 900)
 
@@ -67,7 +67,7 @@ class PosManagementForm(QWidget):
         header = QLabel("POS Operations Center")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
         subtitle = QLabel(
-            f"User: {self.username}  |  Store: {self.bootstrap_context.store_id}  |  Office: {self.bootstrap_context.office_id}"
+            f"User: {self.username}  |  Store: {self.bootstrap_context.store_code}  |  Office: {self.bootstrap_context.office_code}"
         )
         subtitle.setStyleSheet("color: #475569;")
 

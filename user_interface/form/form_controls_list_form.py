@@ -38,7 +38,7 @@ class FormControlsListForm(QWidget):
         self.username = username
         self.form_id = form_id
         self.form_label = form_label
-        self.service = PosManagementService(store_code=bootstrap_context.store_id)
+        self.service = PosManagementService(store_code=bootstrap_context.store_code)
         self.setWindowTitle(f"{Settings().app_name} - Form Controls")
         self.setMinimumSize(1100, 640)
         self._build_ui()
@@ -48,7 +48,7 @@ class FormControlsListForm(QWidget):
         title = QLabel("Form Controls")
         title.setFont(QFont("Segoe UI", 18, QFont.Bold))
         subtitle = QLabel(
-            f"Form: {self.form_label}  |  User: {self.username}  |  Store: {self.bootstrap_context.store_id}"
+            f"Form: {self.form_label}  |  User: {self.username}  |  Store: {self.bootstrap_context.store_code}"
         )
         subtitle.setStyleSheet("color: #475569;")
 

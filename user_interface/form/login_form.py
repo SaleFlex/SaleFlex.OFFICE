@@ -41,7 +41,7 @@ class LoginForm(QWidget):
         self._title_label.setAlignment(Qt.AlignHCenter)
 
         self._subtitle_label = QLabel(
-            f"Store: {bootstrap_context.store_id}  |  Office: {bootstrap_context.office_id}"
+            f"Store: {bootstrap_context.store_code}  |  Office: {bootstrap_context.office_code}"
         )
         self._subtitle_label.setObjectName("subtitleLabel")
         self._subtitle_label.setAlignment(Qt.AlignHCenter)

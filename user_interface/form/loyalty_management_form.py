@@ -37,6 +37,8 @@ from office.service.customer_management_service import (
     LoyaltyPointTransactionView,
 )
 from office.service.loyalty_management_service import (
+    CouponUsageView,
+    CouponView,
     LoyaltyEarnRuleView,
     LoyaltyManagementService,
     LoyaltyProgramPolicyView,
@@ -61,7 +63,7 @@ class LoyaltyManagementForm(QWidget):
         self.bootstrap_context = bootstrap_context
         self.username = username
         self.loyalty_service = LoyaltyManagementService()
-        self.customer_service = CustomerManagementService(store_code=bootstrap_context.store_id)
+        self.customer_service = CustomerManagementService(store_code=bootstrap_context.store_code)
         self.setWindowTitle(f"{Settings().app_name} - Loyalty Management")
         self.setMinimumSize(1480, 960)
 
@@ -72,6 +74,8 @@ class LoyaltyManagementForm(QWidget):
         self._redemption_policies: list[LoyaltyRedemptionPolicyView] = []
         self._customer_loyalties: list[CustomerLoyaltyView] = []
         self._transactions: list[LoyaltyPointTransactionView] = []
+        self._coupons: list[CouponView] = []
+        self._coupon_usages: list[CouponUsageView] = []
 
         self._selected_program_id: str | None = None
         self._selected_tier_id: str | None = None
@@ -90,7 +94,7 @@ class LoyaltyManagementForm(QWidget):
         header = QLabel("Loyalty Management Center")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
         subtitle = QLabel(
-            f"User: {self.username}  |  Store: {self.bootstrap_context.store_id}  |  Office: {self.bootstrap_context.office_id}"
+            f"User: {self.username}  |  Store: {self.bootstrap_context.store_code}  |  Office: {self.bootstrap_context.office_code}"
         )
         subtitle.setStyleSheet("color: #475569;")
 
@@ -115,6 +119,8 @@ class LoyaltyManagementForm(QWidget):
         self._tabs.addTab(self._build_customer_loyalty_tab(), "Customer Loyalty")
         self._tabs.addTab(self._build_transactions_tab(), "Point Transactions")
         self._tabs.addTab(self._build_operations_tab(), "Loyalty Operations")
+        self._tabs.addTab(self._build_coupons_tab(), "Customer Coupons")
+        self._tabs.addTab(self._build_coupon_usage_tab(), "Coupon Usage History")
 
         root = QVBoxLayout()
         root.setContentsMargins(20, 16, 20, 16)
@@ -605,6 +611,86 @@ class LoyaltyManagementForm(QWidget):
         tab.setLayout(layout)
         return tab
 
+    def _build_coupons_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout()
+        filter_layout = QHBoxLayout()
+        self._coupon_customer_filter_combo = QComboBox()
+        self._coupon_customer_filter_combo.currentIndexChanged.connect(self.refresh_coupons)
+        self._coupon_campaign_filter_combo = QComboBox()
+        self._coupon_campaign_filter_combo.currentIndexChanged.connect(self.refresh_coupons)
+        self._coupon_active_filter_combo = QComboBox()
+        self._coupon_active_filter_combo.addItem("All", None)
+        self._coupon_active_filter_combo.addItem("Active Only", True)
+        self._coupon_active_filter_combo.addItem("Inactive Only", False)
+        self._coupon_active_filter_combo.currentIndexChanged.connect(self.refresh_coupons)
+        refresh_button = QPushButton("Refresh")
+        refresh_button.clicked.connect(self.refresh_coupons)
+        filter_layout.addWidget(QLabel("Customer"))
+        filter_layout.addWidget(self._coupon_customer_filter_combo)
+        filter_layout.addWidget(QLabel("Campaign"))
+        filter_layout.addWidget(self._coupon_campaign_filter_combo)
+        filter_layout.addWidget(QLabel("Status"))
+        filter_layout.addWidget(self._coupon_active_filter_combo)
+        filter_layout.addWidget(refresh_button)
+        filter_layout.addStretch(1)
+        layout.addLayout(filter_layout)
+        self._coupon_table = QTableWidget(0, 11)
+        self._coupon_table.setHorizontalHeaderLabels(
+            [
+                "Code",
+                "Name",
+                "Type",
+                "Campaign",
+                "Customer",
+                "Start Date",
+                "End Date",
+                "Usage Limit",
+                "Usage Count",
+                "Sent",
+                "Active",
+            ]
+        )
+        self._init_table(self._coupon_table, None)
+        layout.addWidget(self._coupon_table)
+        tab.setLayout(layout)
+        return tab
+
+    def _build_coupon_usage_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout()
+        filter_layout = QHBoxLayout()
+        self._coupon_usage_customer_filter_combo = QComboBox()
+        self._coupon_usage_customer_filter_combo.currentIndexChanged.connect(self.refresh_coupon_usages)
+        self._coupon_usage_coupon_filter_combo = QComboBox()
+        self._coupon_usage_coupon_filter_combo.currentIndexChanged.connect(self.refresh_coupon_usages)
+        refresh_button = QPushButton("Refresh")
+        refresh_button.clicked.connect(self.refresh_coupon_usages)
+        filter_layout.addWidget(QLabel("Customer"))
+        filter_layout.addWidget(self._coupon_usage_customer_filter_combo)
+        filter_layout.addWidget(QLabel("Coupon"))
+        filter_layout.addWidget(self._coupon_usage_coupon_filter_combo)
+        filter_layout.addWidget(refresh_button)
+        filter_layout.addStretch(1)
+        layout.addLayout(filter_layout)
+        self._coupon_usage_table = QTableWidget(0, 8)
+        self._coupon_usage_table.setHorizontalHeaderLabels(
+            [
+                "Coupon Code",
+                "Coupon Name",
+                "Customer",
+                "Discount Amount",
+                "Usage Date",
+                "Store",
+                "Cashier",
+                "Notes",
+            ]
+        )
+        self._init_table(self._coupon_usage_table, None)
+        layout.addWidget(self._coupon_usage_table)
+        tab.setLayout(layout)
+        return tab
+
     def refresh_all(self) -> None:
         self._reload_lookup_combos()
         self.refresh_programs()
@@ -615,6 +701,8 @@ class LoyaltyManagementForm(QWidget):
         self.refresh_customer_loyalties()
         self.refresh_transactions()
         self.refresh_operations()
+        self.refresh_coupons()
+        self.refresh_coupon_usages()
 
     def refresh_programs(self) -> None:
         self._programs = self.loyalty_service.list_loyalty_programs()
@@ -762,6 +850,51 @@ class LoyaltyManagementForm(QWidget):
             ]
             self._set_row(self._operations_table, row_index, values, row.customer_loyalty_id)
         self._operations_table.resizeColumnsToContents()
+
+    def refresh_coupons(self) -> None:
+        self._coupons = self.loyalty_service.list_coupons(
+            customer_id=self._coupon_customer_filter_combo.currentData(),
+            campaign_id=self._coupon_campaign_filter_combo.currentData(),
+            active_only=self._coupon_active_filter_combo.currentData(),
+        )
+        self._coupon_table.setRowCount(len(self._coupons))
+        for row_index, row in enumerate(self._coupons):
+            values = [
+                row.code,
+                row.name,
+                row.coupon_type,
+                row.campaign_label,
+                row.customer_label,
+                row.start_date.strftime("%Y-%m-%d") if row.start_date else "",
+                row.end_date.strftime("%Y-%m-%d") if row.end_date else "",
+                str(row.usage_limit) if row.usage_limit is not None else "Unlimited",
+                str(row.usage_count),
+                "Yes" if row.is_sent else "No",
+                "Yes" if row.is_active else "No",
+            ]
+            self._set_row(self._coupon_table, row_index, values, row.id)
+        self._coupon_table.resizeColumnsToContents()
+        self._reload_coupon_filter_combos()
+
+    def refresh_coupon_usages(self) -> None:
+        self._coupon_usages = self.loyalty_service.list_coupon_usages(
+            customer_id=self._coupon_usage_customer_filter_combo.currentData(),
+            coupon_id=self._coupon_usage_coupon_filter_combo.currentData(),
+        )
+        self._coupon_usage_table.setRowCount(len(self._coupon_usages))
+        for row_index, row in enumerate(self._coupon_usages):
+            values = [
+                row.coupon_code,
+                row.coupon_name,
+                row.customer_label,
+                self._format_amount(row.discount_amount),
+                row.usage_date.isoformat(sep=" ") if row.usage_date else "",
+                row.store_label,
+                row.cashier_label,
+                row.notes,
+            ]
+            self._set_row(self._coupon_usage_table, row_index, values, row.id)
+        self._coupon_usage_table.resizeColumnsToContents()
 
     def _save_program(self) -> None:
         payload = {
@@ -1164,6 +1297,13 @@ class LoyaltyManagementForm(QWidget):
             self._operations_customer_filter_combo, customer_items, include_empty=True, empty_label="All"
         )
         self._reload_customer_loyalty_tier_combo()
+        self._reload_combo(
+            self._coupon_customer_filter_combo, customer_items, include_empty=True, empty_label="All"
+        )
+        self._reload_combo(
+            self._coupon_usage_customer_filter_combo, customer_items, include_empty=True, empty_label="All"
+        )
+        self._reload_coupon_filter_combos()
 
     def _reload_program_combos(self) -> None:
         program_items = [(item.id, item.label) for item in self.loyalty_service.list_loyalty_program_lookups()]
@@ -1192,6 +1332,16 @@ class LoyaltyManagementForm(QWidget):
         self._reload_combo(self._transaction_loyalty_combo, loyalty_items, include_empty=False, empty_label="")
         self._reload_combo(
             self._transaction_loyalty_filter_combo, loyalty_items, include_empty=True, empty_label="All"
+        )
+
+    def _reload_coupon_filter_combos(self) -> None:
+        campaign_items = [(item.id, item.label) for item in self.loyalty_service.list_campaign_lookups()]
+        coupon_items = [(item.id, item.label) for item in self.loyalty_service.list_coupon_lookups()]
+        self._reload_combo(
+            self._coupon_campaign_filter_combo, campaign_items, include_empty=True, empty_label="All"
+        )
+        self._reload_combo(
+            self._coupon_usage_coupon_filter_combo, coupon_items, include_empty=True, empty_label="All"
         )
 
     def _clear_program_editor(self) -> None:

@@ -54,7 +54,7 @@ class WarehouseManagementForm(QWidget):
         super().__init__(parent=parent)
         self.bootstrap_context = bootstrap_context
         self.username = username
-        self.warehouse_service = WarehouseManagementService(store_code=bootstrap_context.store_id)
+        self.warehouse_service = WarehouseManagementService(store_code=bootstrap_context.store_code)
         self.setWindowTitle(f"{Settings().app_name} - Warehouse Management")
         self.setMinimumSize(1520, 960)
 
@@ -79,7 +79,7 @@ class WarehouseManagementForm(QWidget):
         header = QLabel("Warehouse Management Center")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
         subtitle = QLabel(
-            f"User: {self.username}  |  Store: {self.bootstrap_context.store_id}  |  Office: {self.bootstrap_context.office_id}"
+            f"User: {self.username}  |  Store: {self.bootstrap_context.store_code}  |  Office: {self.bootstrap_context.office_code}"
         )
         subtitle.setStyleSheet("color: #475569;")
 

@@ -35,7 +35,7 @@ class CustomerOperationsForm(QWidget):
         super().__init__(parent=parent)
         self.bootstrap_context = bootstrap_context
         self.username = username
-        self.service = CustomerManagementService(store_code=bootstrap_context.store_id)
+        self.service = CustomerManagementService(store_code=bootstrap_context.store_code)
         self.setWindowTitle(f"{Settings().app_name} - Customer Operations")
         self.setMinimumSize(1180, 680)
         self._build_ui()
@@ -45,7 +45,7 @@ class CustomerOperationsForm(QWidget):
         title = QLabel("Customer Operations")
         title.setFont(QFont("Segoe UI", 18, QFont.Bold))
         subtitle = QLabel(
-            f"User: {self.username}  |  Store: {self.bootstrap_context.store_id}  |  Office: {self.bootstrap_context.office_id}"
+            f"User: {self.username}  |  Store: {self.bootstrap_context.store_code}  |  Office: {self.bootstrap_context.office_code}"
         )
         subtitle.setStyleSheet("color: #475569;")
 

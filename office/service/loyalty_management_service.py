@@ -14,6 +14,10 @@ from sqlalchemy import asc, case, desc, func
 from sqlalchemy.exc import SQLAlchemyError
 
 from data_layer.engine import Engine
+from data_layer.model.definition.campaign import Campaign
+from data_layer.model.definition.cashier import Cashier
+from data_layer.model.definition.coupon import Coupon
+from data_layer.model.definition.coupon_usage import CouponUsage
 from data_layer.model.definition.customer import Customer
 from data_layer.model.definition.customer_loyalty import CustomerLoyalty
 from data_layer.model.definition.loyalty_earn_rule import LoyaltyEarnRule
@@ -22,6 +26,7 @@ from data_layer.model.definition.loyalty_program import LoyaltyProgram
 from data_layer.model.definition.loyalty_program_policy import LoyaltyProgramPolicy
 from data_layer.model.definition.loyalty_redemption_policy import LoyaltyRedemptionPolicy
 from data_layer.model.definition.loyalty_tier import LoyaltyTier
+from data_layer.model.definition.store import Store
 from office.service.customer_management_service import LookupItem, ServiceResult
 
 
@@ -116,6 +121,42 @@ class LoyaltyOperationView:
     redeemed_points: int
     last_transaction_at: datetime | None
     is_active: bool
+
+
+@dataclass(frozen=True)
+class CouponView:
+    id: str
+    code: str
+    name: str
+    description: str
+    campaign_id: str
+    campaign_label: str
+    coupon_type: str
+    customer_id: str | None
+    customer_label: str
+    start_date: datetime | None
+    end_date: datetime | None
+    usage_limit: int | None
+    usage_count: int
+    is_active: bool
+    is_sent: bool
+    sent_date: datetime | None
+    sent_method: str
+
+
+@dataclass(frozen=True)
+class CouponUsageView:
+    id: str
+    coupon_id: str
+    coupon_code: str
+    coupon_name: str
+    customer_id: str | None
+    customer_label: str
+    discount_amount: Decimal
+    usage_date: datetime | None
+    notes: str
+    store_label: str
+    cashier_label: str
 
 
 class LoyaltyManagementService:
@@ -714,6 +755,126 @@ class LoyaltyManagementService:
                 )
                 for loyalty, customer, program, tier in rows
             ]
+
+    def list_coupons(
+        self,
+        customer_id: str | None = None,
+        campaign_id: str | None = None,
+        active_only: bool | None = None,
+    ) -> list[CouponView]:
+        with self._engine.get_session() as session:
+            query = (
+                session.query(Coupon, Campaign, Customer)
+                .join(Campaign, Campaign.id == Coupon.fk_campaign_id)
+                .outerjoin(Customer, Customer.id == Coupon.fk_customer_id)
+                .filter(
+                    Coupon.is_deleted.is_(False),
+                    Campaign.is_deleted.is_(False),
+                )
+                .order_by(asc(Coupon.code))
+            )
+            if customer_id:
+                query = query.filter(Coupon.fk_customer_id == self._as_uuid(customer_id))
+            if campaign_id:
+                query = query.filter(Coupon.fk_campaign_id == self._as_uuid(campaign_id))
+            if active_only is True:
+                query = query.filter(Coupon.is_active.is_(True))
+            if active_only is False:
+                query = query.filter(Coupon.is_active.is_(False))
+            rows = query.all()
+            return [
+                CouponView(
+                    id=str(coupon.id),
+                    code=coupon.code or "",
+                    name=coupon.name or "",
+                    description=coupon.description or "",
+                    campaign_id=str(coupon.fk_campaign_id),
+                    campaign_label=campaign.name or "",
+                    coupon_type=coupon.coupon_type or "",
+                    customer_id=str(coupon.fk_customer_id) if coupon.fk_customer_id else None,
+                    customer_label=(
+                        f"{customer.name} {customer.last_name}".strip()
+                        if customer
+                        else ""
+                    ),
+                    start_date=coupon.start_date,
+                    end_date=coupon.end_date,
+                    usage_limit=coupon.usage_limit,
+                    usage_count=int(coupon.usage_count or 0),
+                    is_active=bool(coupon.is_active),
+                    is_sent=bool(coupon.is_sent),
+                    sent_date=coupon.sent_date,
+                    sent_method=coupon.sent_method or "",
+                )
+                for coupon, campaign, customer in rows
+            ]
+
+    def list_coupon_usages(
+        self,
+        customer_id: str | None = None,
+        coupon_id: str | None = None,
+    ) -> list[CouponUsageView]:
+        with self._engine.get_session() as session:
+            query = (
+                session.query(CouponUsage, Coupon, Customer, Store, Cashier)
+                .join(Coupon, Coupon.id == CouponUsage.fk_coupon_id)
+                .outerjoin(Customer, Customer.id == CouponUsage.fk_customer_id)
+                .outerjoin(Store, Store.id == CouponUsage.fk_store_id)
+                .outerjoin(Cashier, Cashier.id == CouponUsage.fk_cashier_id)
+                .filter(CouponUsage.is_deleted.is_(False))
+                .order_by(desc(CouponUsage.usage_date))
+            )
+            if customer_id:
+                query = query.filter(CouponUsage.fk_customer_id == self._as_uuid(customer_id))
+            if coupon_id:
+                query = query.filter(CouponUsage.fk_coupon_id == self._as_uuid(coupon_id))
+            rows = query.all()
+            return [
+                CouponUsageView(
+                    id=str(usage.id),
+                    coupon_id=str(usage.fk_coupon_id),
+                    coupon_code=coupon.code or "",
+                    coupon_name=coupon.name or "",
+                    customer_id=str(usage.fk_customer_id) if usage.fk_customer_id else None,
+                    customer_label=(
+                        f"{customer.name} {customer.last_name}".strip()
+                        if customer
+                        else ""
+                    ),
+                    discount_amount=Decimal(str(usage.discount_amount or 0)),
+                    usage_date=usage.usage_date,
+                    notes=usage.notes or "",
+                    store_label=(store.brand_name or store.store_code or "") if store else "",
+                    cashier_label=(
+                        f"{cashier.name} {cashier.last_name}".strip()
+                        if cashier
+                        else ""
+                    ),
+                )
+                for usage, coupon, customer, store, cashier in rows
+            ]
+
+    def list_campaign_lookups(self) -> list[LookupItem]:
+        with self._engine.get_session() as session:
+            rows = (
+                session.query(Campaign)
+                .filter(Campaign.is_deleted.is_(False))
+                .order_by(asc(Campaign.name))
+                .all()
+            )
+            return [LookupItem(id=str(row.id), label=row.name or "") for row in rows]
+
+    def list_coupon_lookups(self, customer_id: str | None = None) -> list[LookupItem]:
+        with self._engine.get_session() as session:
+            query = (
+                session.query(Coupon)
+                .filter(Coupon.is_deleted.is_(False))
+                .order_by(asc(Coupon.code))
+            )
+            if customer_id:
+                query = query.filter(Coupon.fk_customer_id == self._as_uuid(customer_id))
+            rows = query.all()
+            return [LookupItem(id=str(row.id), label=f"{row.code} - {row.name}") for row in rows]
 
     def list_loyalty_program_lookups(self) -> list[LookupItem]:
         with self._engine.get_session() as session:

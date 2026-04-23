@@ -102,6 +102,9 @@ from .loyalty_redemption_policy import LoyaltyRedemptionPolicy
 # Customer Segmentation Models
 from .customer_segment import CustomerSegment
 from .customer_segment_member import CustomerSegmentMember
+# Integration / Sync Layer Models
+from .sync_queue_item import SyncQueueItem
+from .gate_notification import GateNotification
 
 __all__ = [
     'Product',
@@ -208,4 +211,7 @@ __all__ = [
     # Customer Segmentation Models
     'CustomerSegment',
     'CustomerSegmentMember',
+    # Integration / Sync Layer Models
+    'SyncQueueItem',
+    'GateNotification',
 ]

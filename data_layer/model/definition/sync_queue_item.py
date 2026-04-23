@@ -1,5 +1,5 @@
 """
-SaleFlex.PyPOS - SyncQueueItem model.
+SaleFlex.OFFICE - SyncQueueItem model.
 
 Implements the offline outbox pattern for the integration layer.
 Every event that must be sent to an external system (GATE, ERP, payment
@@ -113,24 +113,56 @@ class SyncQueueItem(Model, CRUD):
         return item
 
     @classmethod
-    def get_pending(cls, connector_type: str | None = None):
+    def get_pending(cls, connector_type: str | None = None) -> list["SyncQueueItem"]:
         """
         Return all pending items, optionally filtered by connector_type.
 
         Args:
-            connector_type: If provided, filter by this connector.
+            connector_type: If provided, filter by this connector type.
 
         Returns:
-            List of SyncQueueItem instances with status="pending".
+            List of SyncQueueItem instances with status="pending",
+            ordered by created_at ascending (oldest first).
         """
-        # TODO: Implement DB query using SQLAlchemy session.
-        # Example:
-        # with Engine().get_session() as session:
-        #     q = session.query(cls).filter(cls.status == "pending")
-        #     if connector_type:
-        #         q = q.filter(cls.connector_type == connector_type)
-        #     return q.order_by(cls.created_at).all()
-        return []
+        from data_layer.engine import Engine
+        engine = Engine()
+        with engine.get_session() as session:
+            query = session.query(cls).filter(cls.status == "pending")
+            if connector_type:
+                query = query.filter(cls.connector_type == connector_type)
+            return query.order_by(cls.created_at).all()
+
+    @classmethod
+    def get_by_status(cls, status: str,
+                      connector_type: str | None = None) -> list["SyncQueueItem"]:
+        """
+        Return all items with a given status, optionally filtered by connector_type.
+
+        Args:
+            status:         One of "pending", "sent", "failed".
+            connector_type: If provided, filter by this connector type.
+
+        Returns:
+            List of matching SyncQueueItem instances ordered by created_at descending.
+        """
+        from data_layer.engine import Engine
+        engine = Engine()
+        with engine.get_session() as session:
+            query = session.query(cls).filter(cls.status == status)
+            if connector_type:
+                query = query.filter(cls.connector_type == connector_type)
+            return query.order_by(cls.created_at.desc()).all()
+
+    def reset_to_pending(self) -> None:
+        """
+        Reset a failed item back to pending so it can be retried.
+
+        Clears retry_count, error_message, and sets status to 'pending'.
+        """
+        self.status = "pending"
+        self.retry_count = 0
+        self.error_message = None
+        self.save()
 
     def get_payload_dict(self) -> dict:
         """Deserialise the stored JSON payload to a dict."""
