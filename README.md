@@ -9,6 +9,8 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/version-0.1.0a1-orange.svg)
 
+[SaleFlex Ecosystem](https://github.com/SaleFlex) | [SaleFlex.PyPOS](https://github.com/SaleFlex/SaleFlex.PyPOS) | **[SaleFlex.OFFICE](https://github.com/SaleFlex/SaleFlex.OFFICE)** | [SaleFlex.GATE](https://github.com/SaleFlex/SaleFlex.GATE) | [SaleFlex.KITCHEN](https://github.com/SaleFlex/SaleFlex.KITCHEN) | [SaleFlex.POS](https://github.com/SaleFlex/SaleFlex.POS)
+
 # SaleFlex.OFFICE
 
 **SaleFlex.OFFICE** is a PySide6 desktop back-office application in the SaleFlex ecosystem.
