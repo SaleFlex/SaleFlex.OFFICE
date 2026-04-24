@@ -37,38 +37,26 @@ from .receipt_footer import ReceiptFooter
 from .receipt_header import ReceiptHeader
 from .store import Store
 from .table import Table
+# Completed transaction models (read-only in OFFICE; temp models belong to PyPOS only)
+from .transaction_change import TransactionChange
 from .transaction_delivery import TransactionDelivery
-from .transaction_delivery_temp import TransactionDeliveryTemp
 from .transaction_discount import TransactionDiscount
-from .transaction_discount_temp import TransactionDiscountTemp
 from .transaction_discount_type import TransactionDiscountType
 from .transaction_document_type import TransactionDocumentType
 from .transaction_fiscal import TransactionFiscal
-from .transaction_fiscal_temp import TransactionFiscalTemp
 from .transaction_head import TransactionHead
-from .transaction_head_temp import TransactionHeadTemp
 from .transaction_kitchen_order import TransactionKitchenOrder
-from .transaction_kitchen_order_temp import TransactionKitchenOrderTemp
 from .transaction_log import TransactionLog
-from .Transaction_loyalty import TransactionLoyalty
-from .transaction_loyalty_temp import TransactionLoyaltyTemp
+from .transaction_loyalty import TransactionLoyalty
 from .transaction_note import TransactionNote
-from .transaction_note_temp import TransactionNoteTemp
 from .transaction_payment import TransactionPayment
-from .transaction_payment_temp import TransactionPaymentTemp
 from .transaction_product import TransactionProduct
-from .transaction_product_temp import TransactionProductTemp
 from .transaction_refund import TransactionRefund
-from .transaction_refund_temp import TransactionRefundTemp
 from .transaction_sequence import TransactionSequence
 from .transaction_surcharge import TransactionSurcharge
-from .transaction_surcharge_temp import TransactionSurchargeTemp
 from .transaction_tax import TransactionTax
-from .transaction_tax_temp import TransactionTaxTemp
 from .transaction_tip import TransactionTip
-from .transaction_tip_temp import TransactionTipTemp
 from .transaction_department import TransactionDepartment
-from .transaction_department_temp import TransactionDepartmentTemp
 from .transaction_void import TransactionVoid
 from .vat import Vat
 # Warehouse Management Models
@@ -146,38 +134,26 @@ __all__ = [
     'ReceiptHeader',
     'Store',
     'Table',
+    # Completed transaction models (read-only in OFFICE)
+    'TransactionChange',
     'TransactionDelivery',
-    'TransactionDeliveryTemp',
     'TransactionDiscount',
-    'TransactionDiscountTemp',
     'TransactionDiscountType',
     'TransactionDocumentType',
     'TransactionFiscal',
-    'TransactionFiscalTemp',
     'TransactionHead',
-    'TransactionHeadTemp',
     'TransactionKitchenOrder',
-    'TransactionKitchenOrderTemp',
     'TransactionLog',
     'TransactionLoyalty',
-    'TransactionLoyaltyTemp',
     'TransactionNote',
-    'TransactionNoteTemp',
     'TransactionPayment',
-    'TransactionPaymentTemp',
     'TransactionProduct',
-    'TransactionProductTemp',
     'TransactionRefund',
-    'TransactionRefundTemp',
     'TransactionSequence',
     'TransactionSurcharge',
-    'TransactionSurchargeTemp',
     'TransactionTax',
-    'TransactionTaxTemp',
     'TransactionTip',
-    'TransactionTipTemp',
     'TransactionDepartment',
-    'TransactionDepartmentTemp',
     'TransactionVoid',
     'Vat',
     # Warehouse Management Models

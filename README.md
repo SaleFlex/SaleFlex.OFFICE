@@ -135,7 +135,10 @@ The first runnable desktop baseline is now available:
    - form operations listing tab and dedicated operations windows,
    - selected-form control listing window and new form creation flow,
    - POS-scoped form assignment (single terminal or all terminals).
-13. PyPOS-compatible definition models are available under `data_layer/model/definition`.
+13. PyPOS-compatible permanent definition models are available under `data_layer/model/definition`.
+    Temporary (`*_temp`) transaction models are intentionally excluded from OFFICE: those tables
+    hold in-progress POS sale state and have no meaning in a back-office context where all visible
+    transactions are already committed.
 14. Model style is preserved as classic SQLAlchemy `Column` declarations (no `Mapped` pattern).
 15. Multi-terminal store support is added with Office-specific terminal scope fields.
 16. `form` model now supports terminal targeting with `is_shared_across_pos`, `fk_pos_terminal_id`,
@@ -163,7 +166,26 @@ The first runnable desktop baseline is now available:
     - **Payment Types** tab: CRUD for `payment_type` (no, name, description, culture info).
     - **VAT** tab: CRUD for `vat` (no, name, rate, description).
     The `Definitions Management` button is now accessible from the Module Launcher.
-20. Dedicated Data Sync and Backup module is available via `SyncManagementForm`, implementing the offline outbox
+    - **Transaction Settings** tab has been added to `DefinitionsManagementForm`, providing two sub-tabs:
+      - **Document Types**: CRUD for `transaction_document_type` (no, name, display name, description).
+      - **Discount Types**: CRUD for `transaction_discount_type` (code, name, display name, description).
+20. **Transaction Management** module is now available via `TransactionManagementForm`, providing a fully
+    read-only, spreadsheet-style viewer for POS transaction data:
+    - **All POS** tab: combined view of every transaction across all terminals.
+    - **Per-POS tabs**: one tab per distinct `pos_id` found in `transaction_head`, labeled with terminal info.
+    - Each POS tab contains a vertical splitter:
+      - Upper panel: read-only `transaction_head` grid (receipt no, closure no, date/time, type, status,
+        totals, currency, order source, cancelled flag). Color-coded status (green = completed, red = cancelled/refunded).
+      - Lower panel with three detail sub-tabs loaded on transaction row selection:
+        - **Products**: read-only `transaction_product` grid (line, code, name, qty, unit price, discount,
+          total, VAT, VAT %, UOM, voided flag).
+        - **Payments**: read-only `transaction_payment` grid (line, type, amount, currency, status, provider,
+          card type/mask, authorization code). Color-coded payment status.
+        - **Discounts**: read-only `transaction_discount` grid (line, discount type name, amount, rate, code).
+    - All grids support column sorting, alternating row colors, and auto-resize to content.
+    - No add / edit / delete operations are exposed; the module is strictly read-only.
+    - The `Transaction Management` button is now connected in the Module Launcher.
+21. Dedicated Data Sync and Backup module is available via `SyncManagementForm`, implementing the offline outbox
     monitoring UI:
     - **Pending Queue** tab: read-only grid of all outbox items waiting to be dispatched, oldest-first.
     - **Failed Items** tab: grid of items that exhausted all retries, with error detail panel, individual
@@ -173,13 +195,13 @@ The first runnable desktop baseline is now available:
       mark-one-read, and mark-all-read actions. Unread items are highlighted in blue.
     - Summary header banner shows live counts for pending, failed, sent, and unread notifications.
     The `Data Sync and Backup` button is now connected in the Module Launcher.
-21. `SyncQueueItem` model (`data_layer/model/definition/sync_queue_item.py`) and `GateNotification` model
+22. `SyncQueueItem` model (`data_layer/model/definition/sync_queue_item.py`) and `GateNotification` model
     are now registered in the model package and fully implemented (including `get_pending()`, `get_by_status()`,
     and `reset_to_pending()` methods).
-22. `pipos_bootstrap_service.py` has been removed. The service was a placeholder that was never connected
+23. `pipos_bootstrap_service.py` has been removed. The service was a placeholder that was never connected
     to any UI or runtime workflow. The topic registry it contained will be re-introduced as part of the
     REST API layer in Phase 3.
-23. **System Settings** module is now available via `SystemSettingsForm`. It provides three tabs:
+24. **System Settings** module is now available via `SystemSettingsForm`. It provides three tabs:
     - **General**: switch between `standalone` and `gate` mode, set Store Code and Office Code.
     - **POS Server**: configure bind host and port (default `0.0.0.0:9000`) that SaleFlex.PyPOS
       terminals connect to when running in `office` mode.
@@ -187,13 +209,22 @@ The first runnable desktop baseline is now available:
       retry attempts, and request timeout.
     Settings are written back to `settings.toml` and the in-memory `Settings` singleton is reloaded
     immediately. The `System Settings` button is now connected in the Module Launcher.
-24. **REST API server** (`api/server.py`) now starts automatically in a background daemon thread
+25. **REST API server** (`api/server.py`) now starts automatically in a background daemon thread
     during application boot. Provides:
     - `GET /api/v1/health` — liveness probe (always returns `{"status":"ok"}`).
-    - `GET /api/v1/pos/init?office_code=&store_code=&terminal_code=` — returns the complete
+    - `GET  /api/v1/pos/init?office_code=&store_code=&terminal_code=` — returns the complete
       initialization data set for a requesting POS terminal after validating its identity triplet.
+    - `POST /api/v1/pos/transactions` — accepts a batch of completed transaction records pushed by
+      a PyPOS terminal, including the full document tree (head, products, payments, discounts, etc.)
+      and current sequence counter values. Validates the terminal identity, persists all records, and
+      updates per-POS `transaction_sequence` rows.
+    - `POST /api/v1/pos/sequences` — standalone endpoint to update per-POS sequence counters.
     The server uses Flask and listens on the `[network] host:port` configured in `settings.toml`.
-25. Identity fields renamed from `store_id`/`office_id` to `store_code`/`office_code` throughout:
+26a. **Multi-POS transaction management**: OFFICE now supports receiving transactions from multiple
+    POS terminals simultaneously. Each terminal is identified by `(terminal_code, pos_id)`.
+    The `transaction_sequence` table stores per-POS counters independently using `(name, pos_id)`
+    as the unique key, so `ReceiptNumber` and `ClosureNumber` from different terminals never collide.
+26. Identity fields renamed from `store_id`/`office_id` to `store_code`/`office_code` throughout:
     - `settings.toml`, `Settings` class, `BootstrapContext`, and all UI forms updated.
     - The `(office_code, store_code, terminal_code)` triplet now uniquely identifies any POS
       terminal in the ecosystem, supporting multiple OFFICE instances per store.

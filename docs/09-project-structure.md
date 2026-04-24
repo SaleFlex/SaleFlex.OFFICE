@@ -30,9 +30,9 @@ SaleFlex.OFFICE/
 │       ├── mixins.py
 │       └── definition/
 │           ├── __init__.py
-│           ├── *.py (copied model files from `SaleFlex.PyPOS/data_layer/model/definition`)
+│           ├── *.py (PyPOS-aligned permanent model files)
 │           ├── pos_terminal.py
-│           └── ... (100+ models)
+│           └── ... (90+ models, no *_temp transaction tables)
 │
 ├── office/
 │   ├── __init__.py
@@ -113,6 +113,18 @@ SaleFlex.OFFICE/
 - Extend only the fields required for store-level multi-terminal management.
 - Keep each new functional module additive as implementation grows.
 - Preserve static form philosophy while keeping keyboard-first desktop ergonomics.
+
+## Transaction Model Policy
+
+OFFICE shares the same **permanent** transaction ORM models as PyPOS
+(`transaction_head`, `transaction_product`, `transaction_payment`, etc.) so it can
+read the data written by terminals.
+
+**Temporary (`*_temp`) transaction tables are intentionally absent from OFFICE.**
+Those tables hold in-progress (draft) transaction state while a cashier is
+building a sale on a POS terminal; they are purely PyPOS-internal and have no
+meaning in a back-office context where every visible transaction is already
+committed and closed.
 
 ---
 

@@ -12,7 +12,7 @@ entire SaleFlex ecosystem (`SaleFlex.OFFICE`, `SaleFlex.PyPOS`, `SaleFlex.GATE`)
 
 ## Implemented Tabs
 
-The form is organized into eight tabs:
+The form is organized into nine tabs:
 
 ### 1. Countries
 - Create, update, and hard-delete country records (`country` table).
@@ -67,6 +67,21 @@ The form is organized into eight tabs:
   **Description**.
 - Soft delete sets `is_deleted = true`; deactivated VAT rates are hidden from the grid.
 
+### 9. Transaction Settings
+A two-sub-tab panel containing transaction-related configuration tables.
+
+#### 9a. Document Types
+- Create, update, and hard-delete transaction document type records (`transaction_document_type` table).
+- Fields: **No** (required integer, unique), **Name** (required), **Display Name** (optional),
+  **Description** (optional).
+- Document types classify the nature of a transaction document (e.g. `RECEIPT`, `INVOICE`, `REFUND`).
+
+#### 9b. Discount Types
+- Create, update, and hard-delete transaction discount type records (`transaction_discount_type` table).
+- Fields: **Code** (required, unique, max 50 chars), **Name** (required), **Display Name** (optional),
+  **Description** (optional).
+- Discount types categorize discount reasons applied during a transaction (e.g. `LOYALTY`, `PROMO`, `MANUAL`).
+
 ## Service Layer
 
 All database operations are handled by `DefinitionsManagementService`
@@ -84,6 +99,8 @@ The service exposes the following method groups:
 | Currency Rate | `list_currency_rates()` | `add_currency_rate()` | `update_currency_rate()` | `soft_delete_currency_rate()` |
 | Payment Type | `list_payment_types()` | `add_payment_type()` | `update_payment_type()` | `soft_delete_payment_type()` |
 | VAT | `list_vats()` | `add_vat()` | `update_vat()` | `soft_delete_vat()` |
+| Transaction Document Type | `list_transaction_document_types()` | `add_transaction_document_type()` | `update_transaction_document_type()` | `delete_transaction_document_type()` (hard) |
+| Transaction Discount Type | `list_transaction_discount_types()` | `add_transaction_discount_type()` | `update_transaction_discount_type()` | `delete_transaction_discount_type()` (hard) |
 
 Lookup helpers (`list_country_lookups()`, `list_city_lookups()`, `list_currency_lookups()`)
 supply `id + label` pairs for combo-box population in the UI.
@@ -123,7 +140,7 @@ Each tab follows the same spreadsheet-style pattern used across other management
 | File | Role |
 |---|---|
 | `office/service/definitions_management_service.py` | Service / data-access layer |
-| `user_interface/form/definitions_management_form.py` | UI form with 8 tabs |
+| `user_interface/form/definitions_management_form.py` | UI form with 9 tabs |
 | `user_interface/form/module_launcher_form.py` | Entry point – `Definitions Management` button |
 | `data_layer/model/definition/country.py` | `Country` ORM model |
 | `data_layer/model/definition/country_region.py` | `CountryRegion` ORM model |
@@ -133,3 +150,5 @@ Each tab follows the same spreadsheet-style pattern used across other management
 | `data_layer/model/definition/currency_table.py` | `CurrencyTable` ORM model |
 | `data_layer/model/definition/payment_type.py` | `PaymentType` ORM model |
 | `data_layer/model/definition/vat.py` | `Vat` ORM model |
+| `data_layer/model/definition/transaction_document_type.py` | `TransactionDocumentType` ORM model |
+| `data_layer/model/definition/transaction_discount_type.py` | `TransactionDiscountType` ORM model |

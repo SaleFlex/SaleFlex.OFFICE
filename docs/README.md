@@ -40,8 +40,9 @@ All documents are written in English to keep architecture, operations, and API c
 | 19 | `19-form-management-module.md` | Form module UI with form/form-control/tab CRUD and POS scope assignment |
 | 20 | `20-loyalty-management-module.md` | Dedicated loyalty definition module with loyalty CRUD and loyalty operations listing |
 | 21 | `21-warehouse-management-module.md` | Dedicated warehouse module with warehouse/location/stock movement and adjustment CRUD workflows |
-| 22 | `22-definitions-management-module.md` | Definitions module with country, region, city, district, currency, exchange rate, payment type, and VAT CRUD workspaces |
+| 22 | `22-definitions-management-module.md` | Definitions module with country, region, city, district, currency, exchange rate, payment type, VAT, transaction document types, and discount types CRUD workspaces |
 | 23 | `23-sync-management-module.md` | Data Sync and Backup module with outbox queue monitoring, failed item retry, sent history, and GATE notification inbox |
+| 25 | `25-transaction-management-module.md` | Read-only Transaction Management module with POS-tabbed transaction viewer (headers, products, payments, discounts) |
 
 ---
 
@@ -54,4 +55,4 @@ All documents are written in English to keep architecture, operations, and API c
 ---
 
 **Version:** 0.1.0-alpha  
-**Last Updated:** 2026-04-23
+**Last Updated:** 2026-04-24

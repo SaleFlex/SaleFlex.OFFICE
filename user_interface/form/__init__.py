@@ -7,6 +7,7 @@ from .login_form import LoginForm
 from .module_launcher_form import ModuleLauncherForm
 from .product_management_form import ProductManagementForm
 from .startup_form import StartupForm
+from .transaction_management_form import TransactionManagementForm
 
 __all__ = [
     "StartupForm",
@@ -16,4 +17,5 @@ __all__ = [
     "CampaignOperationsForm",
     "CashierManagementForm",
     "ProductManagementForm",
+    "TransactionManagementForm",
 ]

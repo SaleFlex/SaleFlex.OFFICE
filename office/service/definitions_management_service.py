@@ -23,6 +23,8 @@ from data_layer.model.definition.currency import Currency
 from data_layer.model.definition.currency_table import CurrencyTable
 from data_layer.model.definition.district import District
 from data_layer.model.definition.payment_type import PaymentType
+from data_layer.model.definition.transaction_discount_type import TransactionDiscountType
+from data_layer.model.definition.transaction_document_type import TransactionDocumentType
 from data_layer.model.definition.vat import Vat
 
 
@@ -132,6 +134,24 @@ class VatView:
     name: str
     no: int
     rate: Decimal
+    description: str
+
+
+@dataclass(frozen=True)
+class TransactionDocumentTypeView:
+    id: str
+    no: int
+    name: str
+    display_name: str
+    description: str
+
+
+@dataclass(frozen=True)
+class TransactionDiscountTypeView:
+    id: str
+    code: str
+    name: str
+    display_name: str
     description: str
 
 
@@ -715,5 +735,153 @@ class DefinitionsManagementService:
                 record.is_deleted = True
                 session.commit()
             return ServiceResult(success=True, message="VAT deleted successfully.")
+        except SQLAlchemyError as exc:
+            return ServiceResult(success=False, message=str(exc))
+
+    # ------------------------------------------------------------------
+    # Transaction Document Types
+    # ------------------------------------------------------------------
+
+    def list_transaction_document_types(self) -> list[TransactionDocumentTypeView]:
+        with self._engine.get_session() as session:
+            rows = (
+                session.query(TransactionDocumentType)
+                .order_by(asc(TransactionDocumentType.no))
+                .all()
+            )
+            return [
+                TransactionDocumentTypeView(
+                    id=str(r.id),
+                    no=r.no if r.no is not None else 0,
+                    name=r.name or "",
+                    display_name=r.display_name or "",
+                    description=r.description or "",
+                )
+                for r in rows
+            ]
+
+    def add_transaction_document_type(self, data: dict[str, Any]) -> ServiceResult:
+        try:
+            with self._engine.get_session() as session:
+                record = TransactionDocumentType(
+                    no=int(data.get("no", 0)),
+                    name=data.get("name", ""),
+                    display_name=data.get("display_name") or None,
+                    description=data.get("description") or None,
+                )
+                session.add(record)
+                session.commit()
+            return ServiceResult(success=True, message="Transaction document type added successfully.")
+        except SQLAlchemyError as exc:
+            return ServiceResult(success=False, message=str(exc))
+
+    def update_transaction_document_type(
+        self, doc_type_id: str, data: dict[str, Any]
+    ) -> ServiceResult:
+        try:
+            with self._engine.get_session() as session:
+                record = (
+                    session.query(TransactionDocumentType)
+                    .filter(TransactionDocumentType.id == doc_type_id)
+                    .first()
+                )
+                if record is None:
+                    return ServiceResult(success=False, message="Transaction document type not found.")
+                record.no = int(data.get("no", record.no))
+                record.name = data.get("name", record.name)
+                record.display_name = data.get("display_name") or record.display_name
+                record.description = data.get("description") or record.description
+                session.commit()
+            return ServiceResult(success=True, message="Transaction document type updated successfully.")
+        except SQLAlchemyError as exc:
+            return ServiceResult(success=False, message=str(exc))
+
+    def delete_transaction_document_type(self, doc_type_id: str) -> ServiceResult:
+        try:
+            with self._engine.get_session() as session:
+                record = (
+                    session.query(TransactionDocumentType)
+                    .filter(TransactionDocumentType.id == doc_type_id)
+                    .first()
+                )
+                if record is None:
+                    return ServiceResult(success=False, message="Transaction document type not found.")
+                session.delete(record)
+                session.commit()
+            return ServiceResult(success=True, message="Transaction document type deleted successfully.")
+        except SQLAlchemyError as exc:
+            return ServiceResult(success=False, message=str(exc))
+
+    # ------------------------------------------------------------------
+    # Transaction Discount Types
+    # ------------------------------------------------------------------
+
+    def list_transaction_discount_types(self) -> list[TransactionDiscountTypeView]:
+        with self._engine.get_session() as session:
+            rows = (
+                session.query(TransactionDiscountType)
+                .order_by(asc(TransactionDiscountType.name))
+                .all()
+            )
+            return [
+                TransactionDiscountTypeView(
+                    id=str(r.id),
+                    code=r.code or "",
+                    name=r.name or "",
+                    display_name=r.display_name or "",
+                    description=r.description or "",
+                )
+                for r in rows
+            ]
+
+    def add_transaction_discount_type(self, data: dict[str, Any]) -> ServiceResult:
+        try:
+            with self._engine.get_session() as session:
+                record = TransactionDiscountType(
+                    code=data.get("code", ""),
+                    name=data.get("name", ""),
+                    display_name=data.get("display_name") or None,
+                    description=data.get("description") or None,
+                )
+                session.add(record)
+                session.commit()
+            return ServiceResult(success=True, message="Transaction discount type added successfully.")
+        except SQLAlchemyError as exc:
+            return ServiceResult(success=False, message=str(exc))
+
+    def update_transaction_discount_type(
+        self, discount_type_id: str, data: dict[str, Any]
+    ) -> ServiceResult:
+        try:
+            with self._engine.get_session() as session:
+                record = (
+                    session.query(TransactionDiscountType)
+                    .filter(TransactionDiscountType.id == discount_type_id)
+                    .first()
+                )
+                if record is None:
+                    return ServiceResult(success=False, message="Transaction discount type not found.")
+                record.code = data.get("code", record.code)
+                record.name = data.get("name", record.name)
+                record.display_name = data.get("display_name") or record.display_name
+                record.description = data.get("description") or record.description
+                session.commit()
+            return ServiceResult(success=True, message="Transaction discount type updated successfully.")
+        except SQLAlchemyError as exc:
+            return ServiceResult(success=False, message=str(exc))
+
+    def delete_transaction_discount_type(self, discount_type_id: str) -> ServiceResult:
+        try:
+            with self._engine.get_session() as session:
+                record = (
+                    session.query(TransactionDiscountType)
+                    .filter(TransactionDiscountType.id == discount_type_id)
+                    .first()
+                )
+                if record is None:
+                    return ServiceResult(success=False, message="Transaction discount type not found.")
+                session.delete(record)
+                session.commit()
+            return ServiceResult(success=True, message="Transaction discount type deleted successfully.")
         except SQLAlchemyError as exc:
             return ServiceResult(success=False, message=str(exc))

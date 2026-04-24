@@ -30,6 +30,7 @@ from user_interface.form.pos_management_form import PosManagementForm
 from user_interface.form.product_management_form import ProductManagementForm
 from user_interface.form.sync_management_form import SyncManagementForm
 from user_interface.form.system_settings_form import SystemSettingsForm
+from user_interface.form.transaction_management_form import TransactionManagementForm
 from user_interface.form.warehouse_management_form import WarehouseManagementForm
 
 
@@ -59,6 +60,7 @@ class ModuleLauncherForm(QWidget):
         self._definitions_management_form: DefinitionsManagementForm | None = None
         self._sync_management_form: SyncManagementForm | None = None
         self._system_settings_form: SystemSettingsForm | None = None
+        self._transaction_management_form: TransactionManagementForm | None = None
         self._module_names = (
             "Cashier Management",
             "Product Management",
@@ -69,6 +71,7 @@ class ModuleLauncherForm(QWidget):
             "Form Management",
             "Warehouse Management",
             "Definitions Management",
+            "Transaction Management",
             "Reports",
             "Bulk Import",
             "Data Sync and Backup",
@@ -159,6 +162,9 @@ class ModuleLauncherForm(QWidget):
         if module_name.startswith("Definitions Management"):
             self._open_definitions_management()
             return
+        if module_name.startswith("Transaction Management"):
+            self._open_transaction_management()
+            return
         if module_name.startswith("Data Sync and Backup"):
             self._open_sync_management()
             return
@@ -218,6 +224,8 @@ class ModuleLauncherForm(QWidget):
             self._warehouse_management_form.close()
         if self._definitions_management_form is not None:
             self._definitions_management_form.close()
+        if self._transaction_management_form is not None:
+            self._transaction_management_form.close()
         if self._sync_management_form is not None:
             self._sync_management_form.close()
         if self._system_settings_form is not None:
@@ -300,6 +308,17 @@ class ModuleLauncherForm(QWidget):
         self._definitions_management_form.show()
         self._definitions_management_form.raise_()
         self._definitions_management_form.activateWindow()
+
+    def _open_transaction_management(self) -> None:
+        """Open transaction management form as module workflow."""
+        if self._transaction_management_form is None:
+            self._transaction_management_form = TransactionManagementForm(
+                bootstrap_context=self.bootstrap_context,
+                username=self.username,
+            )
+        self._transaction_management_form.show()
+        self._transaction_management_form.raise_()
+        self._transaction_management_form.activateWindow()
 
     def _open_sync_management(self) -> None:
         """Open data sync and backup form as module workflow."""

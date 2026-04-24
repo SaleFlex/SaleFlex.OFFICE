@@ -44,6 +44,8 @@ from office.service.definitions_management_service import (
     DistrictView,
     LookupItem,
     PaymentTypeView,
+    TransactionDiscountTypeView,
+    TransactionDocumentTypeView,
     VatView,
 )
 from settings.settings import Settings
@@ -82,6 +84,11 @@ class DefinitionsManagementForm(QWidget):
         self._selected_rate_id: str | None = None
         self._selected_payment_type_id: str | None = None
         self._selected_vat_id: str | None = None
+        self._selected_doc_type_id: str | None = None
+        self._selected_discount_type_id: str | None = None
+
+        self._doc_types: list[TransactionDocumentTypeView] = []
+        self._discount_types: list[TransactionDiscountTypeView] = []
 
         self._build_ui()
         self.refresh_all()
@@ -121,6 +128,7 @@ class DefinitionsManagementForm(QWidget):
         self._tabs.addTab(self._build_currency_rates_tab(), "Currency Rates")
         self._tabs.addTab(self._build_payment_types_tab(), "Payment Types")
         self._tabs.addTab(self._build_vat_tab(), "VAT")
+        self._tabs.addTab(self._build_transaction_settings_tab(), "Transaction Settings")
 
         root = QVBoxLayout()
         root.setContentsMargins(16, 16, 16, 16)
@@ -709,6 +717,145 @@ class DefinitionsManagementForm(QWidget):
         return container
 
     # ------------------------------------------------------------------
+    # Transaction Settings tab
+    # ------------------------------------------------------------------
+
+    def _build_transaction_settings_tab(self) -> QWidget:
+        """Two sub-tabs: Document Types and Discount Types."""
+        sub_tabs = QTabWidget()
+        sub_tabs.addTab(self._build_doc_types_sub_tab(), "Document Types")
+        sub_tabs.addTab(self._build_discount_types_sub_tab(), "Discount Types")
+
+        container = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.addWidget(sub_tabs)
+        container.setLayout(layout)
+        return container
+
+    def _build_doc_types_sub_tab(self) -> QWidget:
+        splitter = QSplitter(Qt.Vertical)
+
+        self._doc_type_table = QTableWidget(0, 5)
+        self._doc_type_table.setHorizontalHeaderLabels(
+            ["ID", "No", "Name", "Display Name", "Description"]
+        )
+        self._doc_type_table.setColumnHidden(0, True)
+        self._doc_type_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self._doc_type_table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self._doc_type_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self._doc_type_table.verticalHeader().setVisible(False)
+        self._doc_type_table.setAlternatingRowColors(True)
+        self._doc_type_table.itemSelectionChanged.connect(self._on_doc_type_selected)
+        splitter.addWidget(self._doc_type_table)
+
+        detail_group = QGroupBox("Document Type Detail")
+        form = QFormLayout()
+        self._doc_type_no = QSpinBox()
+        self._doc_type_no.setRange(0, 9999)
+        self._doc_type_name = QLineEdit()
+        self._doc_type_display_name = QLineEdit()
+        self._doc_type_description = QLineEdit()
+        form.addRow("No *", self._doc_type_no)
+        form.addRow("Name *", self._doc_type_name)
+        form.addRow("Display Name", self._doc_type_display_name)
+        form.addRow("Description", self._doc_type_description)
+
+        btn_add = QPushButton("Add")
+        btn_add.clicked.connect(self._on_doc_type_add)
+        btn_upd = QPushButton("Update")
+        btn_upd.clicked.connect(self._on_doc_type_update)
+        btn_del = QPushButton("Delete")
+        btn_del.clicked.connect(self._on_doc_type_delete)
+        btn_clr = QPushButton("Clear")
+        btn_clr.clicked.connect(self._doc_type_clear_form)
+        btn_ref = QPushButton("Refresh")
+        btn_ref.clicked.connect(self._load_transaction_document_types)
+
+        btn_row = QHBoxLayout()
+        btn_row.addWidget(btn_add)
+        btn_row.addWidget(btn_upd)
+        btn_row.addWidget(btn_del)
+        btn_row.addStretch(1)
+        btn_row.addWidget(btn_clr)
+        btn_row.addWidget(btn_ref)
+
+        detail_layout = QVBoxLayout()
+        detail_layout.addLayout(form)
+        detail_layout.addLayout(btn_row)
+        detail_group.setLayout(detail_layout)
+        splitter.addWidget(detail_group)
+        splitter.setSizes([460, 240])
+
+        container = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.addWidget(splitter)
+        container.setLayout(layout)
+        return container
+
+    def _build_discount_types_sub_tab(self) -> QWidget:
+        splitter = QSplitter(Qt.Vertical)
+
+        self._discount_type_table = QTableWidget(0, 5)
+        self._discount_type_table.setHorizontalHeaderLabels(
+            ["ID", "Code", "Name", "Display Name", "Description"]
+        )
+        self._discount_type_table.setColumnHidden(0, True)
+        self._discount_type_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self._discount_type_table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self._discount_type_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self._discount_type_table.verticalHeader().setVisible(False)
+        self._discount_type_table.setAlternatingRowColors(True)
+        self._discount_type_table.itemSelectionChanged.connect(self._on_discount_type_selected)
+        splitter.addWidget(self._discount_type_table)
+
+        detail_group = QGroupBox("Discount Type Detail")
+        form = QFormLayout()
+        self._discount_type_code = QLineEdit()
+        self._discount_type_code.setMaxLength(50)
+        self._discount_type_name = QLineEdit()
+        self._discount_type_display_name = QLineEdit()
+        self._discount_type_description = QLineEdit()
+        form.addRow("Code *", self._discount_type_code)
+        form.addRow("Name *", self._discount_type_name)
+        form.addRow("Display Name", self._discount_type_display_name)
+        form.addRow("Description", self._discount_type_description)
+
+        btn_add = QPushButton("Add")
+        btn_add.clicked.connect(self._on_discount_type_add)
+        btn_upd = QPushButton("Update")
+        btn_upd.clicked.connect(self._on_discount_type_update)
+        btn_del = QPushButton("Delete")
+        btn_del.clicked.connect(self._on_discount_type_delete)
+        btn_clr = QPushButton("Clear")
+        btn_clr.clicked.connect(self._discount_type_clear_form)
+        btn_ref = QPushButton("Refresh")
+        btn_ref.clicked.connect(self._load_transaction_discount_types)
+
+        btn_row = QHBoxLayout()
+        btn_row.addWidget(btn_add)
+        btn_row.addWidget(btn_upd)
+        btn_row.addWidget(btn_del)
+        btn_row.addStretch(1)
+        btn_row.addWidget(btn_clr)
+        btn_row.addWidget(btn_ref)
+
+        detail_layout = QVBoxLayout()
+        detail_layout.addLayout(form)
+        detail_layout.addLayout(btn_row)
+        detail_group.setLayout(detail_layout)
+        splitter.addWidget(detail_group)
+        splitter.setSizes([460, 240])
+
+        container = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.addWidget(splitter)
+        container.setLayout(layout)
+        return container
+
+    # ------------------------------------------------------------------
     # Refresh helpers
     # ------------------------------------------------------------------
 
@@ -726,6 +873,8 @@ class DefinitionsManagementForm(QWidget):
         self._load_currency_rates()
         self._load_payment_types()
         self._load_vats()
+        self._load_transaction_document_types()
+        self._load_transaction_discount_types()
 
     def _load_countries(self) -> None:
         self._countries = self.service.list_countries()
@@ -1529,6 +1678,191 @@ class DefinitionsManagementForm(QWidget):
         self._vat_name.clear()
         self._vat_rate.setValue(0.0)
         self._vat_description.clear()
+
+    # ------------------------------------------------------------------
+    # Load helpers – Transaction Document Types
+    # ------------------------------------------------------------------
+
+    def _load_transaction_document_types(self) -> None:
+        self._doc_types = self.service.list_transaction_document_types()
+        self._doc_type_table.setRowCount(len(self._doc_types))
+        for i, row in enumerate(self._doc_types):
+            self._doc_type_table.setItem(i, 0, QTableWidgetItem(row.id))
+            self._doc_type_table.setItem(i, 1, QTableWidgetItem(str(row.no)))
+            self._doc_type_table.setItem(i, 2, QTableWidgetItem(row.name))
+            self._doc_type_table.setItem(i, 3, QTableWidgetItem(row.display_name))
+            self._doc_type_table.setItem(i, 4, QTableWidgetItem(row.description))
+        self._doc_type_table.resizeColumnsToContents()
+        self._doc_type_table.horizontalHeader().setStretchLastSection(True)
+
+    # ------------------------------------------------------------------
+    # Load helpers – Transaction Discount Types
+    # ------------------------------------------------------------------
+
+    def _load_transaction_discount_types(self) -> None:
+        self._discount_types = self.service.list_transaction_discount_types()
+        self._discount_type_table.setRowCount(len(self._discount_types))
+        for i, row in enumerate(self._discount_types):
+            self._discount_type_table.setItem(i, 0, QTableWidgetItem(row.id))
+            self._discount_type_table.setItem(i, 1, QTableWidgetItem(row.code))
+            self._discount_type_table.setItem(i, 2, QTableWidgetItem(row.name))
+            self._discount_type_table.setItem(i, 3, QTableWidgetItem(row.display_name))
+            self._discount_type_table.setItem(i, 4, QTableWidgetItem(row.description))
+        self._discount_type_table.resizeColumnsToContents()
+        self._discount_type_table.horizontalHeader().setStretchLastSection(True)
+
+    # ------------------------------------------------------------------
+    # Selection handlers – Transaction Document Types
+    # ------------------------------------------------------------------
+
+    def _on_doc_type_selected(self) -> None:
+        rows = self._doc_type_table.selectedItems()
+        if not rows:
+            return
+        row_idx = self._doc_type_table.currentRow()
+        self._selected_doc_type_id = self._doc_type_table.item(row_idx, 0).text()
+        record = next((d for d in self._doc_types if d.id == self._selected_doc_type_id), None)
+        if record is None:
+            return
+        self._doc_type_no.setValue(record.no)
+        self._doc_type_name.setText(record.name)
+        self._doc_type_display_name.setText(record.display_name)
+        self._doc_type_description.setText(record.description)
+
+    # ------------------------------------------------------------------
+    # Selection handlers – Transaction Discount Types
+    # ------------------------------------------------------------------
+
+    def _on_discount_type_selected(self) -> None:
+        rows = self._discount_type_table.selectedItems()
+        if not rows:
+            return
+        row_idx = self._discount_type_table.currentRow()
+        self._selected_discount_type_id = self._discount_type_table.item(row_idx, 0).text()
+        record = next((d for d in self._discount_types if d.id == self._selected_discount_type_id), None)
+        if record is None:
+            return
+        self._discount_type_code.setText(record.code)
+        self._discount_type_name.setText(record.name)
+        self._discount_type_display_name.setText(record.display_name)
+        self._discount_type_description.setText(record.description)
+
+    # ------------------------------------------------------------------
+    # CRUD – Transaction Document Types
+    # ------------------------------------------------------------------
+
+    def _on_doc_type_add(self) -> None:
+        data = self._collect_doc_type_data()
+        if not data:
+            return
+        result = self.service.add_transaction_document_type(data)
+        self._show_status(result.success, result.message)
+        if result.success:
+            self._load_transaction_document_types()
+            self._doc_type_clear_form()
+
+    def _on_doc_type_update(self) -> None:
+        if not self._selected_doc_type_id:
+            self._show_status(False, "Select a document type row first.")
+            return
+        data = self._collect_doc_type_data()
+        if not data:
+            return
+        result = self.service.update_transaction_document_type(self._selected_doc_type_id, data)
+        self._show_status(result.success, result.message)
+        if result.success:
+            self._load_transaction_document_types()
+
+    def _on_doc_type_delete(self) -> None:
+        if not self._selected_doc_type_id:
+            self._show_status(False, "Select a document type row first.")
+            return
+        if not self._confirm("Delete this transaction document type?"):
+            return
+        result = self.service.delete_transaction_document_type(self._selected_doc_type_id)
+        self._show_status(result.success, result.message)
+        if result.success:
+            self._selected_doc_type_id = None
+            self._load_transaction_document_types()
+            self._doc_type_clear_form()
+
+    def _collect_doc_type_data(self) -> dict | None:
+        name = self._doc_type_name.text().strip()
+        if not name:
+            self._show_status(False, "Name is required.")
+            return None
+        return {
+            "no": self._doc_type_no.value(),
+            "name": name,
+            "display_name": self._doc_type_display_name.text().strip() or None,
+            "description": self._doc_type_description.text().strip() or None,
+        }
+
+    def _doc_type_clear_form(self) -> None:
+        self._selected_doc_type_id = None
+        self._doc_type_no.setValue(0)
+        self._doc_type_name.clear()
+        self._doc_type_display_name.clear()
+        self._doc_type_description.clear()
+
+    # ------------------------------------------------------------------
+    # CRUD – Transaction Discount Types
+    # ------------------------------------------------------------------
+
+    def _on_discount_type_add(self) -> None:
+        data = self._collect_discount_type_data()
+        if not data:
+            return
+        result = self.service.add_transaction_discount_type(data)
+        self._show_status(result.success, result.message)
+        if result.success:
+            self._load_transaction_discount_types()
+            self._discount_type_clear_form()
+
+    def _on_discount_type_update(self) -> None:
+        if not self._selected_discount_type_id:
+            self._show_status(False, "Select a discount type row first.")
+            return
+        data = self._collect_discount_type_data()
+        if not data:
+            return
+        result = self.service.update_transaction_discount_type(self._selected_discount_type_id, data)
+        self._show_status(result.success, result.message)
+        if result.success:
+            self._load_transaction_discount_types()
+
+    def _on_discount_type_delete(self) -> None:
+        if not self._selected_discount_type_id:
+            self._show_status(False, "Select a discount type row first.")
+            return
+        if not self._confirm("Delete this transaction discount type?"):
+            return
+        result = self.service.delete_transaction_discount_type(self._selected_discount_type_id)
+        self._show_status(result.success, result.message)
+        if result.success:
+            self._selected_discount_type_id = None
+            self._load_transaction_discount_types()
+            self._discount_type_clear_form()
+
+    def _collect_discount_type_data(self) -> dict | None:
+        code = self._discount_type_code.text().strip()
+        name = self._discount_type_name.text().strip()
+        if not code or not name:
+            self._show_status(False, "Code and Name are required.")
+            return None
+        return {
+            "code": code,
+            "name": name,
+            "display_name": self._discount_type_display_name.text().strip() or None,
+            "description": self._discount_type_description.text().strip() or None,
+        }
+
+    def _discount_type_clear_form(self) -> None:
+        self._selected_discount_type_id = None
+        self._discount_type_code.clear()
+        self._discount_type_name.clear()
+        self._discount_type_display_name.clear()
+        self._discount_type_description.clear()
 
     # ------------------------------------------------------------------
     # Utilities
