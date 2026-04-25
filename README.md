@@ -1,4 +1,4 @@
-> **Current status:** Alpha v0.1.0a1 - Active Development (The project is not production-ready yet.)
+> **Current status:** Alpha v0.1.0a2 - Active Development (The project is not production-ready yet.)
 > 
 > Core POS functionality operational.
 
@@ -7,7 +7,7 @@
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0.48-green.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.1.3-yellow.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.1.0a1-orange.svg)
+![Version](https://img.shields.io/badge/version-0.1.0a2-orange.svg)
 
 [SaleFlex Ecosystem](https://github.com/SaleFlex) | [SaleFlex.PyPOS](https://github.com/SaleFlex/SaleFlex.PyPOS) | **[SaleFlex.OFFICE](https://github.com/SaleFlex/SaleFlex.OFFICE)** | [SaleFlex.GATE](https://github.com/SaleFlex/SaleFlex.GATE) | [SaleFlex.KITCHEN](https://github.com/SaleFlex/SaleFlex.KITCHEN) | [SaleFlex.POS](https://github.com/SaleFlex/SaleFlex.POS)
 
@@ -218,6 +218,9 @@ The first runnable desktop baseline is now available:
       a PyPOS terminal, including the full document tree (head, products, payments, discounts, etc.)
       and current sequence counter values. Validates the terminal identity, persists all records, and
       updates per-POS `transaction_sequence` rows.
+    - `POST /api/v1/pos/closures` — accepts completed end-of-day closure records and all summary
+      tables (VAT, payment type, department, discount, cashier, currency, country-specific data),
+      then updates the same per-POS sequence counters.
     - `POST /api/v1/pos/sequences` — standalone endpoint to update per-POS sequence counters.
     The server uses Flask and listens on the `[network] host:port` configured in `settings.toml`.
 26a. **Multi-POS transaction management**: OFFICE now supports receiving transactions from multiple

@@ -109,7 +109,7 @@ def _ensure_pos_terminal_default(engine: Engine) -> None:
                 ip_address="127.0.0.1",
                 host_name="LOCAL-POS-001",
                 app_mode="office",
-                software_version="0.1.0-alpha",
+                software_version="0.1.0a2",
                 is_active=True,
                 is_online=False,
                 is_allowed_pull=True,

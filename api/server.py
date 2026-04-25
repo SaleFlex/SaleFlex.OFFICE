@@ -20,6 +20,12 @@ POST /api/v1/pos/transactions
                   sequences[{name, value}]}
     Response: {status, accepted, rejected}
 
+POST /api/v1/pos/closures
+    Accepts completed end-of-day closure records pushed by a PyPOS terminal.
+    Body (JSON): {office_code, store_code, terminal_code, pos_id, closures[],
+                  sequences[{name, value}]}
+    Response: {status, accepted, rejected}
+
 POST /api/v1/pos/sequences
     Updates sequence counters for a specific POS terminal.
     Body (JSON): {office_code, store_code, terminal_code, pos_id,
@@ -70,6 +76,7 @@ def _resolve_sequences_for_terminal(
     session,
     TransactionSequence,
     terminal_code: str,
+    pos_id: int | None = None,
 ) -> list:
     """
     Return the sequence rows that a PyPOS terminal should use on first boot.
@@ -81,12 +88,16 @@ def _resolve_sequences_for_terminal(
        pushed its counters to OFFICE.  Restoring from these values lets a
        re-installed terminal continue from exactly where it left off.
 
-    2. Rows where ``pos_id IS NULL`` (shared / store-wide defaults).
+    2. Rows whose ``pos_id`` matches this terminal's ``pos_no_in_store``.
+       This covers existing OFFICE databases where terminal-specific sequence
+       rows were stored by POS number before ``terminal_code`` was populated.
+
+    3. Rows where ``pos_id IS NULL`` (shared / store-wide defaults).
        These are the factory-default rows seeded during OFFICE initialisation
        (e.g. ReceiptNumber=1, ClosureNumber=1).  A brand-new terminal that has
        never pushed any data falls into this bucket.
 
-    3. All active rows as a final fallback (legacy behaviour for databases that
+    4. All active rows as a final fallback (legacy behaviour for databases that
        predate the per-terminal columns).
     """
     if terminal_code:
@@ -100,6 +111,18 @@ def _resolve_sequences_for_terminal(
         )
         if terminal_rows:
             return terminal_rows
+
+    if pos_id is not None:
+        pos_rows = (
+            session.query(TransactionSequence)
+            .filter(
+                TransactionSequence.pos_id == pos_id,
+                TransactionSequence.is_deleted == False,  # noqa: E712
+            )
+            .all()
+        )
+        if pos_rows:
+            return pos_rows
 
     shared_rows = (
         session.query(TransactionSequence)
@@ -115,7 +138,13 @@ def _resolve_sequences_for_terminal(
     return _query_active(session, TransactionSequence)
 
 
-def _build_init_payload(session, store, terminal_code: str = "") -> dict[str, Any]:
+def _build_init_payload(
+    session,
+    store,
+    terminal_code: str = "",
+    pos_id: int | None = None,
+    terminal_id=None,
+) -> dict[str, Any]:
     """
     Query every table that a PyPOS terminal needs on first start-up and
     return the results as a flat dictionary keyed by table/resource name.
@@ -131,6 +160,13 @@ def _build_init_payload(session, store, terminal_code: str = "") -> dict[str, An
         counters are filtered to return terminal-specific values so that a
         re-installed POS continues from its last known counter values rather
         than starting from the store-wide defaults.
+    pos_id:
+        The terminal's integer POS number (``pos_no_in_store``).  Used as a
+        secondary sequence lookup key when older rows do not have
+        ``terminal_code`` populated.
+    terminal_id:
+        UUID of the requesting ``PosTerminal``.  Used to return only the
+        matching ``PosSettings`` row when OFFICE manages multiple POS terminals.
     """
     # Lazy imports keep the module importable before SQLAlchemy models load.
     from data_layer.model.definition.cashier import Cashier
@@ -176,6 +212,20 @@ def _build_init_payload(session, store, terminal_code: str = "") -> dict[str, An
     from data_layer.model.definition.customer_segment import CustomerSegment
     from data_layer.model.definition.customer import Customer
 
+    if terminal_id is not None:
+        pos_settings_rows = (
+            session.query(PosSettings)
+            .filter(
+                PosSettings.fk_pos_terminal_id == terminal_id,
+                PosSettings.is_deleted == False,  # noqa: E712
+            )
+            .all()
+        )
+        if not pos_settings_rows:
+            pos_settings_rows = _query_active(session, PosSettings)
+    else:
+        pos_settings_rows = _query_active(session, PosSettings)
+
     return {
         "cashiers":                  _serialize(_query_active(session, Cashier)),
         "countries":                 _serialize(session.query(Country).all()),
@@ -202,12 +252,17 @@ def _build_init_payload(session, store, terminal_code: str = "") -> dict[str, An
         "transaction_discount_types": _serialize(_query_active(session, TransactionDiscountType)),
         "transaction_document_types": _serialize(_query_active(session, TransactionDocumentType)),
         "transaction_sequences":     _serialize(
-            _resolve_sequences_for_terminal(session, TransactionSequence, terminal_code)
+            _resolve_sequences_for_terminal(
+                session,
+                TransactionSequence,
+                terminal_code,
+                pos_id=pos_id,
+            )
         ),
         "forms":                     _serialize(_query_active(session, Form)),
         "form_controls":             _serialize(_query_active(session, FormControl)),
         "label_values":              _serialize(session.query(LabelValue).all()),
-        "pos_settings":              _serialize(session.query(PosSettings).all()),
+        "pos_settings":              _serialize(pos_settings_rows),
         "pos_virtual_keyboards":     _serialize(session.query(PosVirtualKeyboard).all()),
         "cashier_performance_targets": _serialize(_query_active(session, CashierPerformanceTarget)),
         "campaign_types":            _serialize(_query_active(session, CampaignType)),
@@ -261,6 +316,7 @@ def pos_init():
     try:
         from data_layer.model.definition.store import Store
         from data_layer.model.definition.pos_terminal import PosTerminal
+        from data_layer.model.definition.pos_settings import PosSettings
 
         engine = Engine()
         with engine.get_session() as session:
@@ -320,22 +376,49 @@ def pos_init():
                     ),
                 }), 403
 
-            # Build payload – pass terminal_code so sequences are filtered to
-            # this terminal's previously pushed values (or fall back to defaults).
-            data = _build_init_payload(session, store, terminal_code=terminal_code)
+            terminal_settings = (
+                session.query(PosSettings)
+                .filter(
+                    PosSettings.fk_pos_terminal_id == terminal.id,
+                    PosSettings.is_deleted == False,  # noqa: E712
+                )
+                .first()
+            )
+            terminal_pos_id = None
+            if terminal_settings is not None:
+                try:
+                    terminal_pos_id = int(terminal_settings.pos_no_in_store)
+                except (TypeError, ValueError):
+                    terminal_pos_id = None
+
+            # Build payload with both terminal_code and pos_id so a reinstalled
+            # PyPOS receives its last known counters instead of default values.
+            data = _build_init_payload(
+                session,
+                store,
+                terminal_code=terminal_code,
+                pos_id=terminal_pos_id,
+                terminal_id=terminal.id,
+            )
 
             # Record bootstrap timestamp
             terminal.last_bootstrap_at = datetime.now(timezone.utc)
 
             logger.info(
                 "pos/init: data dispatched to terminal_code=%s store=%s "
-                "(sequences: terminal-specific=%s)",
+                "pos_id=%s (sequences: terminal-specific=%s pos-specific=%s)",
                 terminal_code,
                 store_code,
+                terminal_pos_id,
                 any(
                     s.get("terminal_code") == terminal_code
                     for s in data.get("transaction_sequences", [])
                     if isinstance(s, dict)
+                ),
+                any(
+                    s.get("pos_id") == terminal_pos_id
+                    for s in data.get("transaction_sequences", [])
+                    if isinstance(s, dict) and terminal_pos_id is not None
                 ),
             )
             return jsonify({
@@ -511,6 +594,147 @@ def _upsert_transaction_batch(session, transactions: list[dict]) -> tuple[int, i
 
         except Exception as exc:
             logger.error("_upsert_transaction_batch: row error – %s", exc)
+            rejected += 1
+            session.rollback()
+
+    return accepted, rejected
+
+
+def _upsert_closure_batch(session, closures: list[dict]) -> tuple[int, int]:
+    """
+    Persist completed closure records and their summary rows into OFFICE.
+
+    Each closure dict must contain a 'closure' key with the Closure fields.
+    Returns (accepted, rejected) counts.
+    """
+    from uuid import UUID
+    from datetime import datetime
+    from data_layer.model.definition.closure import Closure
+    from data_layer.model.definition.closure_vat_summary import ClosureVATSummary
+    from data_layer.model.definition.closure_tip_summary import ClosureTipSummary
+    from data_layer.model.definition.closure_discount_summary import ClosureDiscountSummary
+    from data_layer.model.definition.closure_payment_type_summary import ClosurePaymentTypeSummary
+    from data_layer.model.definition.closure_document_type_summary import ClosureDocumentTypeSummary
+    from data_layer.model.definition.closure_department_summary import ClosureDepartmentSummary
+    from data_layer.model.definition.closure_currency import ClosureCurrency
+    from data_layer.model.definition.closure_cashier_summary import ClosureCashierSummary
+    from data_layer.model.definition.closure_country_specific import ClosureCountrySpecific
+
+    _LINE_MAP = [
+        ("vat_summaries",           ClosureVATSummary,          "fk_closure_id"),
+        ("tip_summaries",           ClosureTipSummary,          "fk_closure_id"),
+        ("discount_summaries",      ClosureDiscountSummary,     "fk_closure_id"),
+        ("payment_type_summaries",  ClosurePaymentTypeSummary,  "fk_closure_id"),
+        ("document_type_summaries", ClosureDocumentTypeSummary, "fk_closure_id"),
+        ("department_summaries",    ClosureDepartmentSummary,   "fk_closure_id"),
+        ("currency_summaries",      ClosureCurrency,            "fk_closure_id"),
+        ("cashier_summaries",       ClosureCashierSummary,      "fk_closure_id"),
+        ("country_specific",        ClosureCountrySpecific,     "fk_closure_id"),
+    ]
+
+    def _coerce(value, col_type_str: str):
+        """Lightweight type coercion for incoming JSON values."""
+        from datetime import date as _date
+        if value is None:
+            return None
+        if "UUID" in col_type_str or col_type_str == "UUID":
+            try:
+                return UUID(str(value))
+            except (ValueError, AttributeError):
+                return value
+        if "DateTime" in col_type_str or "DATETIME" in col_type_str.upper():
+            if isinstance(value, datetime):
+                return value
+            if isinstance(value, str):
+                v = value.split("+")[0].rstrip("Z").strip()
+                for fmt in (
+                    "%Y-%m-%dT%H:%M:%S.%f",
+                    "%Y-%m-%dT%H:%M:%S",
+                    "%Y-%m-%d %H:%M:%S.%f",
+                    "%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%d",
+                ):
+                    try:
+                        return datetime.strptime(v, fmt)
+                    except ValueError:
+                        continue
+        if col_type_str in ("Date", "DATE"):
+            if isinstance(value, datetime):
+                return value.date()
+            if isinstance(value, _date):
+                return value
+            if isinstance(value, str):
+                try:
+                    return datetime.strptime(value[:10], "%Y-%m-%d").date()
+                except ValueError:
+                    pass
+        return value
+
+    def _apply_row(instance, data: dict, allowed_columns: set, col_types: dict):
+        for key, val in data.items():
+            if key not in allowed_columns:
+                continue
+            col_type_str = str(type(col_types.get(key, "")).__name__)
+            instance.__dict__[key] = _coerce(val, col_type_str)
+
+    accepted = rejected = 0
+
+    for payload in closures:
+        try:
+            closure_data = payload.get("closure", {})
+            if not closure_data:
+                rejected += 1
+                continue
+
+            raw_closure_id = closure_data.get("id")
+            if not raw_closure_id:
+                rejected += 1
+                continue
+            try:
+                closure_uuid = UUID(str(raw_closure_id))
+            except (ValueError, AttributeError):
+                rejected += 1
+                continue
+
+            closure_unique_id = closure_data.get("closure_unique_id", "")
+            existing = (
+                session.query(Closure)
+                .filter(Closure.closure_unique_id == closure_unique_id)
+                .first()
+            ) if closure_unique_id else None
+            if existing:
+                accepted += 1
+                continue
+
+            closure_cols = {c.name for c in Closure.__table__.columns}
+            closure_ctypes = {c.name: c.type for c in Closure.__table__.columns}
+            closure_obj = Closure()
+            _apply_row(closure_obj, closure_data, closure_cols, closure_ctypes)
+            closure_obj.id = closure_uuid
+            session.add(closure_obj)
+            session.flush()
+
+            for key, model_cls, fk_field in _LINE_MAP:
+                rows = payload.get(key, [])
+                if key == "country_specific":
+                    rows = [payload["country_specific"]] if payload.get("country_specific") else []
+                if not rows:
+                    continue
+                line_cols = {c.name for c in model_cls.__table__.columns}
+                line_ctypes = {c.name: c.type for c in model_cls.__table__.columns}
+                for row_data in rows:
+                    if not row_data:
+                        continue
+                    line_obj = model_cls()
+                    _apply_row(line_obj, row_data, line_cols, line_ctypes)
+                    setattr(line_obj, fk_field, closure_uuid)
+                    session.add(line_obj)
+
+            session.flush()
+            accepted += 1
+
+        except Exception as exc:
+            logger.error("_upsert_closure_batch: row error – %s", exc)
             rejected += 1
             session.rollback()
 
@@ -712,6 +936,66 @@ def pos_receive_transactions():
 
     except Exception as exc:
         logger.error("pos/transactions: unexpected error – %s", exc, exc_info=True)
+        return jsonify({"status": "error", "message": "Internal server error"}), 500
+
+
+@_flask_app.route("/api/v1/pos/closures", methods=["POST"])
+def pos_receive_closures():
+    """
+    Accept completed end-of-day closure records pushed by a PyPOS terminal.
+
+    Body (JSON)
+    -----------
+    {
+        "office_code":   "<code>",
+        "store_code":    "<code>",
+        "terminal_code": "<code>",
+        "pos_id":        <int>,
+        "closures":      [ { "closure": {...}, "vat_summaries": [...], ... }, ... ],
+        "sequences":     [ { "name": "<name>", "value": <int> }, ... ]
+    }
+    """
+    body = request.get_json(silent=True) or {}
+    office_code   = (body.get("office_code")   or "").strip()
+    store_code    = (body.get("store_code")    or "").strip()
+    terminal_code = (body.get("terminal_code") or "").strip()
+    pos_id        = body.get("pos_id")
+    closures      = body.get("closures", [])
+    sequences     = body.get("sequences", [])
+
+    if not office_code or not store_code or not terminal_code:
+        return jsonify({
+            "status": "error",
+            "message": "Missing required fields: office_code, store_code, terminal_code",
+        }), 400
+
+    if not isinstance(closures, list):
+        return jsonify({"status": "error", "message": "'closures' must be a list"}), 400
+
+    try:
+        engine = Engine()
+        with engine.get_session() as session:
+            try:
+                _validate_terminal(session, office_code, store_code, terminal_code)
+            except ValueError as exc:
+                logger.warning("pos/closures: %s", exc)
+                return jsonify({"status": "error", "message": str(exc)}), 404
+
+            accepted, rejected = _upsert_closure_batch(session, closures)
+
+            if sequences and pos_id is not None:
+                _upsert_sequences(session, int(pos_id), terminal_code, sequences)
+
+            session.commit()
+
+        logger.info(
+            "pos/closures: terminal=%s accepted=%d rejected=%d",
+            terminal_code, accepted, rejected,
+        )
+        return jsonify({"status": "ok", "accepted": accepted, "rejected": rejected})
+
+    except Exception as exc:
+        logger.error("pos/closures: unexpected error – %s", exc, exc_info=True)
         return jsonify({"status": "error", "message": "Internal server error"}), 500
 
 

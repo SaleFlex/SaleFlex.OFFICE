@@ -1,6 +1,6 @@
 [app]
 name = "SaleFlex.OFFICE"
-version = "0.1.0a1"
+version = "0.1.0a2"
 mode = "standalone" # standalone | gate
 store_code = "STORE-001"
 office_code = "OFFICE-001"

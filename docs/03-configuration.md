@@ -26,7 +26,7 @@ Settings can be changed through the **System Settings** module inside the applic
 ```toml
 [app]
 name = "SaleFlex.OFFICE"
-version = "0.1.0-alpha"
+version = "0.1.0a2"
 mode = "standalone"    # standalone | gate
 store_code = "STORE-001"
 office_code = "OFFICE-001"

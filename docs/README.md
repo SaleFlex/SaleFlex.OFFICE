@@ -54,5 +54,5 @@ All documents are written in English to keep architecture, operations, and API c
 
 ---
 
-**Version:** 0.1.0-alpha  
+**Version:** 0.1.0a2  
 **Last Updated:** 2026-04-24

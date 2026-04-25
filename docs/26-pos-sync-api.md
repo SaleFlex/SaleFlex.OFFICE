@@ -8,9 +8,9 @@ data pushed by `SaleFlex.PyPOS` terminals.
 ## Overview
 
 OFFICE acts as a central hub for one or more POS terminals.  When a PyPOS terminal
-completes a transaction it serialises the full document tree and sends it to OFFICE via
-HTTP.  OFFICE validates the terminal identity, persists the records, and updates the
-per-POS sequence counters—all without any manual operator intervention.
+completes a transaction or end-of-day closure it serialises the full record tree and sends
+it to OFFICE via HTTP.  OFFICE validates the terminal identity, persists the records, and
+updates the per-POS sequence counters—all without any manual operator intervention.
 
 ---
 
@@ -44,8 +44,9 @@ following priority order:
 | Priority | Condition | Result |
 |----------|-----------|--------|
 | **1** | Rows in `transaction_sequence` with `terminal_code` matching this terminal | Terminal's last known counter values – POS **continues from where it left off** |
-| **2** | Rows with `pos_id IS NULL` (shared / store-wide defaults) | Factory defaults (e.g. `ReceiptNumber=1`) – used for a **brand-new terminal** |
-| **3** | All active rows (legacy fallback) | Databases created before multi-POS support was introduced |
+| **2** | Rows with `pos_id` matching the terminal's `pos_no_in_store` | Existing terminal rows where `terminal_code` was not populated |
+| **3** | Rows with `pos_id IS NULL` (shared / store-wide defaults) | Factory defaults (e.g. `ReceiptNumber=1`) – used for a **brand-new terminal** |
+| **4** | All active rows (legacy fallback) | Databases created before multi-POS support was introduced |
 
 This means a POS terminal that was previously in use and has been **reinstalled**
 (database wiped) will automatically resume from the correct `ReceiptNumber` and
@@ -121,10 +122,56 @@ database are silently skipped (counted as `accepted`).
 
 ---
 
+### `POST /api/v1/pos/closures`
+
+Accept and persist completed end-of-day closure records pushed by a PyPOS terminal.
+Also updates per-POS sequence counters when the `sequences` array is provided.
+
+**Request body** (JSON):
+
+```json
+{
+  "office_code":   "OFFICE-001",
+  "store_code":    "STORE-001",
+  "terminal_code": "POS-01",
+  "pos_id":        1,
+  "closures": [
+    {
+      "closure":                 { "...": "Closure fields" },
+      "vat_summaries":           [ { "...": "ClosureVATSummary fields" } ],
+      "tip_summaries":           [ { "...": "ClosureTipSummary fields" } ],
+      "discount_summaries":      [ { "...": "ClosureDiscountSummary fields" } ],
+      "payment_type_summaries":  [ { "...": "ClosurePaymentTypeSummary fields" } ],
+      "document_type_summaries": [ { "...": "ClosureDocumentTypeSummary fields" } ],
+      "department_summaries":    [ { "...": "ClosureDepartmentSummary fields" } ],
+      "currency_summaries":      [ { "...": "ClosureCurrency fields" } ],
+      "cashier_summaries":       [ { "...": "ClosureCashierSummary fields" } ],
+      "country_specific":        { "...": "ClosureCountrySpecific fields" } or null
+    }
+  ],
+  "sequences": [
+    { "name": "ReceiptNumber", "value": 1 },
+    { "name": "ClosureNumber", "value":  4 }
+  ]
+}
+```
+
+**Response**:
+
+```json
+{ "status": "ok", "accepted": 1, "rejected": 0 }
+```
+
+**Deduplication**: closures with a `closure_unique_id` already present in the OFFICE
+database are silently skipped (counted as `accepted`).
+
+---
+
 ### `POST /api/v1/pos/sequences`
 
 Update sequence counter values for a specific POS terminal.  Typically included inside
-the `/api/v1/pos/transactions` request body, but can also be called independently.
+the `/api/v1/pos/transactions` and `/api/v1/pos/closures` request bodies, but can also
+be called independently.
 
 **Request body** (JSON):
 
@@ -169,16 +216,15 @@ from databases created before multi-POS support was introduced).
 ## Multi-POS Architecture
 
 OFFICE is designed to manage **multiple POS terminals simultaneously**.  Each terminal
-registers with its own `terminal_code` and `pos_id`.  Incoming transactions are tagged with
-`pos_id` in the `transaction_head` table, allowing the Transaction Management view to
-display per-terminal tabs.
+registers with its own `terminal_code` and `pos_id`.  Incoming transactions and closures
+are tagged through their POS/store context so OFFICE can report per terminal.
 
 ```
                           SaleFlex.OFFICE
                          ┌──────────────────────────────────┐
-  POS-01 ── POST /tx ──→ │  POST /api/v1/pos/transactions   │
-  POS-02 ── POST /tx ──→ │  validates terminal, persists    │
-  POS-03 ── POST /tx ──→ │  transactions, updates sequences │
+  POS-01 ── POST /tx,/closure ──→ │  POST /api/v1/pos/transactions │
+  POS-02 ── POST /tx,/closure ──→ │  POST /api/v1/pos/closures     │
+  POS-03 ── POST /tx,/closure ──→ │  validates and persists data   │
                          │                                  │
                          │  transaction_head (pos_id tagged)│
                          │  transaction_sequence (per POS)  │
@@ -201,7 +247,7 @@ in OFFICE receive a `404` response.
 
 | File | Role |
 |------|------|
-| `api/server.py` | Flask routes; `_upsert_transaction_batch()`, `_upsert_sequences()` |
+| `api/server.py` | Flask routes; `_upsert_transaction_batch()`, `_upsert_closure_batch()`, `_upsert_sequences()` |
 | `data_layer/model/definition/transaction_sequence.py` | Per-POS `TransactionSequence` model |
 | `data_layer/model/definition/pos_terminal.py` | Terminal registration/validation |
 | `data_layer/db_manager.py` | Schema migrations for `transaction_sequence` new columns |

@@ -77,7 +77,7 @@ def _write_toml(data: dict) -> None:
     lines = [
         "[app]",
         f'name = "{app.get("name", "SaleFlex.OFFICE")}"',
-        f'version = "{app.get("version", "0.1.0-alpha")}"',
+        f'version = "{app.get("version", "0.1.0a2")}"',
         f'mode = "{app.get("mode", "standalone")}" # standalone | gate',
         f'store_code = "{app.get("store_code", "STORE-001")}"',
         f'office_code = "{app.get("office_code", "OFFICE-001")}"',
