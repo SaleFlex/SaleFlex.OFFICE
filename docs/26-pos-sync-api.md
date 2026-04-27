@@ -233,6 +233,29 @@ are tagged through their POS/store context so OFFICE can report per terminal.
 
 ---
 
+## Post-Closure Master-Data Refresh
+
+After every **successful** `POST /api/v1/pos/closures` response, the requesting PyPOS
+terminal automatically calls `GET /api/v1/pos/init` to pull a fresh copy of all
+master-data and upsert it into its local SQLite database.
+
+This means that **changes made in OFFICE** — products, prices, cashiers, campaigns,
+loyalty rules, sequences, etc. — are propagated to POS terminals at the start of each
+new sales period without requiring a manual restart or re-bootstrap:
+
+```
+PyPOS (closure pushed successfully)
+  └─ GET /api/v1/pos/init          → returns latest OFFICE master-data
+       └─ reseed_from_office_data()  → INSERT OR REPLACE on all local tables
+            └─ caches rebuilt       → pos_data, product_data, ActiveCampaignCache
+```
+
+OFFICE does not need to implement any additional endpoint for this behaviour — it reuses
+the existing `/api/v1/pos/init` endpoint, which already returns terminal-specific sequence
+counters via the priority-order resolution described above.
+
+---
+
 ## Authentication & Security
 
 Currently OFFICE validates every request against the registered `PosTerminal` table

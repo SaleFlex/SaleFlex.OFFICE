@@ -4,7 +4,7 @@ Fullscreen module launcher shown after successful login.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QApplication,
@@ -36,6 +36,8 @@ from user_interface.form.warehouse_management_form import WarehouseManagementFor
 
 class ModuleLauncherForm(QWidget):
     """Display available module buttons after login."""
+
+    logout_requested = Signal()
 
     def __init__(
         self,
@@ -119,6 +121,10 @@ class ModuleLauncherForm(QWidget):
         card_layout.addLayout(grid_layout)
         actions_layout = QHBoxLayout()
         actions_layout.addStretch(1)
+        logout_button = QPushButton("Logout")
+        logout_button.setObjectName("logoutButton")
+        logout_button.clicked.connect(self._on_logout_clicked)
+        actions_layout.addWidget(logout_button)
         exit_button = QPushButton("Exit Application")
         exit_button.setObjectName("exitButton")
         exit_button.clicked.connect(self._on_exit_clicked)
@@ -195,6 +201,21 @@ class ModuleLauncherForm(QWidget):
         self._product_management_form.raise_()
         self._product_management_form.activateWindow()
 
+    def _on_logout_clicked(self) -> None:
+        """Close all open module forms and emit logout_requested to return to login screen."""
+        answer = QMessageBox.question(
+            self,
+            "Logout",
+            "Do you want to logout? The application and its REST service will keep running.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        self._close_all_module_forms()
+        self.hide()
+        self.logout_requested.emit()
+
     def _on_exit_clicked(self) -> None:
         """Ask confirmation and close the full application."""
         answer = QMessageBox.question(
@@ -206,6 +227,11 @@ class ModuleLauncherForm(QWidget):
         )
         if answer != QMessageBox.Yes:
             return
+        self._close_all_module_forms()
+        QApplication.instance().quit()
+
+    def _close_all_module_forms(self) -> None:
+        """Close every open module child form."""
         if self._cashier_management_form is not None:
             self._cashier_management_form.close()
         if self._product_management_form is not None:
@@ -230,7 +256,6 @@ class ModuleLauncherForm(QWidget):
             self._sync_management_form.close()
         if self._system_settings_form is not None:
             self._system_settings_form.close()
-        QApplication.instance().quit()
 
     def _open_campaign_management(self) -> None:
         """Open campaign management form as module workflow."""
@@ -394,6 +419,21 @@ class ModuleLauncherForm(QWidget):
             }
             QPushButton#exitButton:pressed {
                 background-color: #7f1d1d;
+            }
+            QPushButton#logoutButton {
+                color: #ffffff;
+                background-color: #b45309;
+                border: 1px solid #92400e;
+                border-radius: 8px;
+                padding: 8px 14px;
+                min-width: 160px;
+                font-weight: 600;
+            }
+            QPushButton#logoutButton:hover {
+                background-color: #92400e;
+            }
+            QPushButton#logoutButton:pressed {
+                background-color: #78350f;
             }
             """
         )

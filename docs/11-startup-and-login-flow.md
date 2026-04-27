@@ -13,6 +13,8 @@ This document describes the first implemented runtime flow for `SaleFlex.OFFICE`
 5. Build `BootstrapContext` (mode, store, office, role defaults)
 6. Dispose startup form and open `LoginForm` in fullscreen
 7. After successful login, open `ModuleLauncherForm` in fullscreen
+8. Logout from `ModuleLauncherForm` hides the launcher and re-presents `LoginForm`
+   without restarting the process (REST service keeps running)
 
 This sequence ensures that required startup data is loaded before login interaction begins.
 
@@ -57,12 +59,25 @@ The current operational forms are intentionally non-touch-oriented and fullscree
 
 On successful login, `cashier.login_at` is updated and the module launcher transition continues.
 
+## Logout Behavior
+
+When the **Logout** button on `ModuleLauncherForm` is confirmed:
+
+1. All open module forms are closed.
+2. `ModuleLauncherForm` emits `logout_requested` and hides itself.
+3. `OfficeApplication._on_logout()` destroys the launcher instance and calls
+   `_show_login_form()` to display a fresh `LoginForm`.
+4. The embedded Flask REST server (background daemon thread) is unaffected and continues
+   to serve PyPOS terminals during the session change.
+
+This allows a manager to hand off the workstation to another operator without
+stopping store-level REST communication.
+
 ## Next Planned Steps
 
 1. Replace plain-text password comparison with hashed password verification.
 2. Add session state and role-based navigation guard.
-3. Wire module launcher buttons to real module shell/forms.
-4. Expand startup loader with reference caches and integration prechecks.
+3. Expand startup loader with reference caches and integration prechecks.
 
 ---
 

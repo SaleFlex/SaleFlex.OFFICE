@@ -78,4 +78,15 @@ class OfficeApplication:
             bootstrap_context=context,
             username=username,
         )
+        self.module_launcher_form.logout_requested.connect(
+            lambda: self._on_logout(context=context)
+        )
         self.module_launcher_form.show()
+
+    def _on_logout(self, context: BootstrapContext) -> None:
+        """Destroy the current launcher and return to the login screen."""
+        logger.info("User logged out. Returning to login screen.")
+        if self.module_launcher_form is not None:
+            self.module_launcher_form.deleteLater()
+            self.module_launcher_form = None
+        self._show_login_form(context)

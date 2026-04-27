@@ -231,6 +231,14 @@ The first runnable desktop baseline is now available:
     - `settings.toml`, `Settings` class, `BootstrapContext`, and all UI forms updated.
     - The `(office_code, store_code, terminal_code)` triplet now uniquely identifies any POS
       terminal in the ecosystem, supporting multiple OFFICE instances per store.
+27. **Logout support** added to `ModuleLauncherForm`:
+    - A **Logout** button sits beside the existing **Exit Application** button in the action bar.
+    - Confirming logout closes all open module forms, hides the launcher, and returns the UI to
+      `LoginForm` without restarting the process.
+    - The embedded Flask REST server keeps running in its background daemon thread throughout the
+      session change, so PyPOS terminals remain served without interruption.
+    - `ModuleLauncherForm` exposes a `logout_requested` PySide6 `Signal`; `OfficeApplication`
+      handles it in `_on_logout()` by destroying the old launcher and opening a fresh login screen.
 
 This baseline is intentionally simple and prepared for iterative expansion.
 
@@ -300,6 +308,14 @@ python saleflex.py
 Key rule: when PyPOS is in `office` mode, OFFICE **always responds with its locally stored data**.
 OFFICE never forwards a PyPOS request to GATE in real time; data flows from GATE to OFFICE
 in the background on a schedule.
+
+**Post-closure master-data refresh:** after every successful closure push (`POST /api/v1/pos/closures`),
+PyPOS automatically calls `GET /api/v1/pos/init` again and upserts the returned data into
+its local SQLite database.  Any product, price, cashier, campaign, or loyalty-rule changes
+made in OFFICE are thus reflected on the POS terminal at the start of each new sales period
+without requiring a manual restart or re-bootstrap.  All in-memory caches on PyPOS
+(`pos_data`, `product_data`, `ActiveCampaignCache`) are rebuilt immediately after the upsert
+completes.
 
 ## User and Access Model
 
