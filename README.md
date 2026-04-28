@@ -6,7 +6,7 @@
 ![PySide6](https://img.shields.io/badge/PySide6-6.11.0-blue.svg)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0.48-green.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.1.3-yellow.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)
 ![Version](https://img.shields.io/badge/version-0.1.0a2-orange.svg)
 
 [SaleFlex Ecosystem](https://github.com/SaleFlex) | [SaleFlex.PyPOS](https://github.com/SaleFlex/SaleFlex.PyPOS) | **[SaleFlex.OFFICE](https://github.com/SaleFlex/SaleFlex.OFFICE)** | [SaleFlex.GATE](https://github.com/SaleFlex/SaleFlex.GATE) | [SaleFlex.KITCHEN](https://github.com/SaleFlex/SaleFlex.KITCHEN) | [SaleFlex.POS](https://github.com/SaleFlex/SaleFlex.POS)
@@ -386,7 +386,7 @@ Project documentation is available in `docs/`:
 
 ## License
 
-This project is licensed under the MIT License. See `LICENSE` for details.
+This project is licensed under the GNU Affero General Public License v3.0. See `LICENSE` for details.
 
 ---
 
