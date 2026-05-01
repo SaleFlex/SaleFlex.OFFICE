@@ -1,392 +1,180 @@
-> **Current status:** Alpha v0.1.0a2 - Active Development (The project is not production-ready yet.)
-> 
-> Core POS functionality operational.
-
-![Python 3.13](https://img.shields.io/badge/python-%3E=_3.13-success.svg)
+﻿![Python 3.13](https://img.shields.io/badge/python-%3E=_3.13-success.svg)
 ![PySide6](https://img.shields.io/badge/PySide6-6.11.0-blue.svg)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0.48-green.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.1.3-yellow.svg)
 ![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)
 ![Version](https://img.shields.io/badge/version-0.1.0a2-orange.svg)
+![Status](https://img.shields.io/badge/status-alpha-orange.svg)
 
-[SaleFlex Ecosystem](https://github.com/SaleFlex) | [SaleFlex.PyPOS](https://github.com/SaleFlex/SaleFlex.PyPOS) | **[SaleFlex.OFFICE](https://github.com/SaleFlex/SaleFlex.OFFICE)** | [SaleFlex.GATE](https://github.com/SaleFlex/SaleFlex.GATE) | [SaleFlex.KITCHEN](https://github.com/SaleFlex/SaleFlex.KITCHEN) | [SaleFlex.POS](https://github.com/SaleFlex/SaleFlex.POS)
+[SaleFlex Ecosystem](https://github.com/SaleFlex) | [SaleFlex.PyPOS](https://github.com/SaleFlex/SaleFlex.PyPOS) | **[SaleFlex.OFFICE](https://github.com/SaleFlex/SaleFlex.OFFICE)** | [SaleFlex.GATE](https://github.com/SaleFlex/SaleFlex.GATE) | [SaleFlex.KITCHEN](https://github.com/SaleFlex/SaleFlex.KITCHEN) | [SaleFlex.mPOS](https://github.com/SaleFlex/SaleFlex.mPOS)
 
 # SaleFlex.OFFICE
 
-**SaleFlex.OFFICE** is a PySide6 desktop back-office application in the SaleFlex ecosystem.
-It provides static manager/admin forms, local store operations, POS data backup, and integration
-orchestration between store terminals and central systems.
+**SaleFlex.OFFICE** is the back-office management application of the SaleFlex ecosystem - a PySide6 desktop application that gives store managers and administrators full control over products, campaigns, customers, loyalty programs, POS terminals, and transaction data.
 
-Unlike `SaleFlex.PyPOS` (touch-first and dynamic-form heavy), `SaleFlex.OFFICE` is designed as
-an operations console with static forms and workflow-driven modules.
+It acts as the local coordination hub between your POS terminals and the central SaleFlex.GATE cloud, keeping operations running smoothly even when internet connectivity is unstable.
 
-## Vision
+> Developed and operated by **[Mousavi.Tech](https://mousavi.tech)**
 
-- Provide complete store master-data management for one or many POS terminals.
-- Act as a reliable local coordination node when internet is unstable.
-- Synchronize with `SaleFlex.GATE` via REST/JSON when available.
-- Keep a full local copy of POS operational data for reporting and backup.
-- Enable managers/admins to run analytics and exports without using POS screens.
+---
 
-## Core Scope
+## Who Is This For?
 
-- **Technology stack**: Python + PySide6 + SQLAlchemy.
-- **UI model**: Static forms (no dynamic form runtime like PyPOS).
-- **Integration protocol**: REST API + JSON for all system-to-system communication.
-- **Bulk data load**: CSV/XML import tools for products, campaigns, and loyalty definitions.
-- **Reporting**: On-screen dashboards plus CSV/PDF export.
+SaleFlex.OFFICE is built for:
 
-## Architecture Overview
+- **Store managers and administrators** who need a desktop back-office to manage products, pricing, campaigns, and cashiers without touching the POS terminal.
+- **Multi-terminal retailers** who need a single coordination point for several POS devices in the same store.
+- **Businesses already using SaleFlex.PyPOS** who want to manage master data, review transactions, and sync to the cloud from a dedicated management workstation.
+- **Tech-forward teams** who want a self-hosted, open-source back-office they can extend and integrate with their existing ERP or accounting systems.
 
-SaleFlex.OFFICE sits between in-store PyPOS terminals and central SaleFlex.GATE: PyPOS and OFFICE exchange REST/JSON on the LAN; OFFICE syncs with GATE when `gate` mode is enabled.
+---
 
-```text
-+---------------------+          REST/JSON          +---------------------+
-|   SaleFlex.PyPOS    | <-------------------------> |   SaleFlex.OFFICE   |
-+---------------------+                             +---------------------+
-          ^                                                  |
-          |                     REST/JSON                    |
-          +--------------------------------------------------v
-                                            +---------------------+
-                                            |    SaleFlex.GATE    |
-                                            +---------------------+
-```
+## Community Edition
 
-**Layers**
+SaleFlex.OFFICE is fully **open source** under the [GNU Affero General Public License v3.0 (AGPLv3)](LICENSE).
 
-1. **UI** — PySide6 static forms (manager/admin workflows; no dynamic form interpreter).
-2. **Application** — `office/manager` orchestration, validation, permissions.
-3. **Service** — `office/service/*` business logic per module (products, sync, auth, and so on).
-4. **API** — Flask app in `api/server.py` (versioned REST for PyPOS bootstrap and health).
-5. **Data** — SQLAlchemy models under `data_layer/model` (PyPOS-compatible `Column` style).
-6. **Sync** — Outbox/inbox models and UI (`SyncQueueItem`, `GateNotification`, Sync Management module).
+The Community Edition includes everything you need to manage a store:
 
-**Core runtime pieces** (baseline): entry via `saleflex.py`, `StartupForm` → `BootstrapDataLoader` → `LoginForm` → `ModuleLauncherForm`; embedded REST server starts in a background thread at boot. Reliability goals are local-first writes for POS-originated data, retryable outbound sync, and continuity when WAN is down while LAN still works.
+- Product, variant, barcode, and pricing management
+- Campaign and promotion management (types, rules, products, usage tracking)
+- Customer management with loyalty programs, tiers, earn/redeem rules, and point history
+- Cashier management with role-based access and performance metrics
+- POS terminal management and configuration
+- Warehouse management (stock levels, movements, adjustments)
+- Transaction viewer - read-only view of all POS transactions, payments, and discounts
+- Data sync and backup monitoring (outbox queue, GATE notifications, sent history)
+- System settings (mode, store/office codes, POS server, GATE integration)
+- Built-in REST API server for SaleFlex.PyPOS terminal bootstrap and data push
+- Self-hosted - your data stays with you
 
-Full detail: [docs/02-architecture.md](docs/02-architecture.md).
+Anyone can clone, run, and modify SaleFlex.OFFICE for their own needs. Contributions are welcome.
 
-## Project Structure
+---
 
-Implemented layout (high level):
+## Commercial Services
 
-```text
-SaleFlex.OFFICE/
-├── saleflex.py                 # Application entry
-├── settings.toml               # Runtime configuration
-├── requirements.txt
-├── api/
-│   ├── __init__.py
-│   └── server.py               # Flask REST (/api/v1/...), daemon thread at startup
-├── core/
-│   └── logger.py
-├── settings/
-│   └── settings.py             # Settings singleton + reload after UI edits
-├── data_layer/
-│   ├── engine.py
-│   └── model/
-│       ├── crud_model.py, mixins.py
-│       └── definition/         # PyPOS-aligned model files (100+)
-├── office/
-│   ├── manager/
-│   │   └── application.py
-│   └── service/                # Per-domain services (auth, bootstrap, product, …)
-└── user_interface/form/        # Static PySide6 forms (login, launcher, modules, …)
-```
+Need professional support or custom features? We offer:
 
-Near-term expansion (migrations, repositories, dedicated managers for sync/import/report) is described in [docs/09-project-structure.md](docs/09-project-structure.md).
+- **Custom development** - tailored features, integrations, and workflows built for your business.
+- **Implementation & onboarding** - hands-on setup, hardware configuration, and staff training.
+- **Priority support** - dedicated support channels with guaranteed response times.
+- **Integration services** - connecting SaleFlex.OFFICE to your existing ERP, accounting, loyalty, or payment systems.
 
-## Current Foundation Implementation
+> Contact us at [saleflex.pro](https://saleflex.pro) for commercial enquiries.
 
-The first runnable desktop baseline is now available:
+---
 
-1. `saleflex.py` starts the app and prepares runtime context.
-2. `StartupForm` (about/splash-style) opens first and displays bootstrap progress.
-3. `BootstrapDataLoader` loads startup context and validates mode settings.
-4. `LoginForm` opens after bootstrap in fullscreen and validates credentials against the `cashier` table.
-5. Successful login opens `ModuleLauncherForm`, which lists module buttons in fullscreen.
-6. `Cashier Management`, `Product Management`, `Campaign Management`, `Customer Management`, `Loyalty Management`, `POS Management`, `Form Management`, and `Warehouse Management` module buttons are now connected to dedicated operations forms.
-7. Cashier module provides spreadsheet-style grids for:
-   - cashier list and cashier CRUD operations (add, update, soft delete),
-   - cashier performance target definition and lifecycle updates,
-   - cashier transaction metrics listing with cashier-based filtering.
-8. Product module provides spreadsheet-style workspaces for:
-   - product list and product CRUD operations (add, update, soft delete),
-   - product catalog listing with fast search and relational counters,
-   - manufacturer CRUD, product unit CRUD, and product attribute CRUD,
-   - product variant CRUD and product barcode CRUD,
-   - cashier reference listing for office operators inside product workflow.
-9. Campaign module provides spreadsheet-style workspaces for:
-   - campaign list and campaign CRUD operations (add, update, soft delete),
-   - campaign type CRUD, campaign rule CRUD, and campaign product CRUD,
-   - campaign usage CRUD for office-side campaign event tracking,
-   - campaign operations listing tab and a dedicated campaign operations window.
-10. Customer module provides spreadsheet-style workspaces for:
-   - customer list and customer CRUD operations (add, update, soft delete),
-   - customer segment CRUD and segment member CRUD,
-   - customer loyalty CRUD and loyalty point transaction CRUD,
-   - customer operations listing tab and a dedicated customer operations window,
-   - loyalty-focused launch actions for dedicated loyalty management and loyalty operations forms.
-11. POS module provides spreadsheet-style workspaces for:
-   - POS terminal list and POS terminal CRUD operations (add, update, soft delete),
-   - POS settings CRUD and terminal-based filtering,
-   - POS virtual keyboard definition CRUD.
-12. Form module provides spreadsheet-style workspaces for:
-   - form CRUD, form control CRUD, and form control tab CRUD,
-   - form operations listing tab and dedicated operations windows,
-   - selected-form control listing window and new form creation flow,
-   - POS-scoped form assignment (single terminal or all terminals).
-13. PyPOS-compatible permanent definition models are available under `data_layer/model/definition`.
-    Temporary (`*_temp`) transaction models are intentionally excluded from OFFICE: those tables
-    hold in-progress POS sale state and have no meaning in a back-office context where all visible
-    transactions are already committed.
-14. Model style is preserved as classic SQLAlchemy `Column` declarations (no `Mapped` pattern).
-15. Multi-terminal store support is added with Office-specific terminal scope fields.
-16. `form` model now supports terminal targeting with `is_shared_across_pos`, `fk_pos_terminal_id`,
-    and `Form.is_available_for_pos(...)` for runtime checks.
-17. Dedicated loyalty management workflows are available via `LoyaltyManagementForm` and `LoyaltyOperationsForm`,
-    including CRUD for loyalty definition tables (`loyalty_program`, `loyalty_tier`, `loyalty_earn_rule`,
-    `loyalty_program_policy`, `loyalty_redemption_policy`) plus customer loyalty usage tables.
-    The `Loyalty Management` button is now directly accessible from the Module Launcher.
-    Two additional read-only tabs display customer-assigned coupons (`Customer Coupons`) and coupon
-    redemption history (`Coupon Usage History`) sourced from `coupon` and `coupon_usage` tables.
-18. Dedicated warehouse management workflows are available via `WarehouseManagementForm` and `WarehouseOperationsForm`,
-    including CRUD for warehouse definition tables (`warehouse`, `warehouse_location`) and warehouse operation tables
-    (`warehouse_product_stock`, `warehouse_stock_movement`, `warehouse_stock_adjustment`) plus aggregated warehouse operations.
-19. Dedicated definitions management workflow is available via `DefinitionsManagementForm`, providing spreadsheet-style
-    tabbed workspaces for all core reference/master-data tables:
-    - **Countries** tab: CRUD for `country` (name, ISO alpha-2/3, ISO numeric code).
-    - **Country Regions** tab: CRUD for `country_region` (ISO 3166-2, region code, type, special requirements flag),
-      with country filter combo.
-    - **Cities** tab: CRUD for `city` (name, code, short name, numeric code, country link),
-      with country filter combo.
-    - **Districts** tab: CRUD for `district` (name, code, short name, numeric code, city link),
-      with city filter combo.
-    - **Currencies** tab: CRUD for `currency` (no, name, currency code, sign, sign direction, symbol, decimal places).
-    - **Currency Rates** tab: CRUD for `currency_table` exchange rate pairs (base currency, target currency, rate).
-    - **Payment Types** tab: CRUD for `payment_type` (no, name, description, culture info).
-    - **VAT** tab: CRUD for `vat` (no, name, rate, description).
-    The `Definitions Management` button is now accessible from the Module Launcher.
-    - **Transaction Settings** tab has been added to `DefinitionsManagementForm`, providing two sub-tabs:
-      - **Document Types**: CRUD for `transaction_document_type` (no, name, display name, description).
-      - **Discount Types**: CRUD for `transaction_discount_type` (code, name, display name, description).
-20. **Transaction Management** module is now available via `TransactionManagementForm`, providing a fully
-    read-only, spreadsheet-style viewer for POS transaction data:
-    - **All POS** tab: combined view of every transaction across all terminals.
-    - **Per-POS tabs**: one tab per distinct `pos_id` found in `transaction_head`, labeled with terminal info.
-    - Each POS tab contains a vertical splitter:
-      - Upper panel: read-only `transaction_head` grid (receipt no, closure no, date/time, type, status,
-        totals, currency, order source, cancelled flag). Color-coded status (green = completed, red = cancelled/refunded).
-      - Lower panel with three detail sub-tabs loaded on transaction row selection:
-        - **Products**: read-only `transaction_product` grid (line, code, name, qty, unit price, discount,
-          total, VAT, VAT %, UOM, voided flag).
-        - **Payments**: read-only `transaction_payment` grid (line, type, amount, currency, status, provider,
-          card type/mask, authorization code). Color-coded payment status.
-        - **Discounts**: read-only `transaction_discount` grid (line, discount type name, amount, rate, code).
-    - All grids support column sorting, alternating row colors, and auto-resize to content.
-    - No add / edit / delete operations are exposed; the module is strictly read-only.
-    - The `Transaction Management` button is now connected in the Module Launcher.
-21. Dedicated Data Sync and Backup module is available via `SyncManagementForm`, implementing the offline outbox
-    monitoring UI:
-    - **Pending Queue** tab: read-only grid of all outbox items waiting to be dispatched, oldest-first.
-    - **Failed Items** tab: grid of items that exhausted all retries, with error detail panel, individual
-      reset-to-pending, individual delete, and batch reset-all-failed actions.
-    - **Sent History** tab: grid of successfully delivered records, individual delete and clear-all actions.
-    - **GATE Notifications** tab: inbound notification inbox from `SaleFlex.GATE`, with body detail panel,
-      mark-one-read, and mark-all-read actions. Unread items are highlighted in blue.
-    - Summary header banner shows live counts for pending, failed, sent, and unread notifications.
-    The `Data Sync and Backup` button is now connected in the Module Launcher.
-22. `SyncQueueItem` model (`data_layer/model/definition/sync_queue_item.py`) and `GateNotification` model
-    are now registered in the model package and fully implemented (including `get_pending()`, `get_by_status()`,
-    and `reset_to_pending()` methods).
-23. `pipos_bootstrap_service.py` has been removed. The service was a placeholder that was never connected
-    to any UI or runtime workflow. The topic registry it contained will be re-introduced as part of the
-    REST API layer in Phase 3.
-24. **System Settings** module is now available via `SystemSettingsForm`. It provides three tabs:
-    - **General**: switch between `standalone` and `gate` mode, set Store Code and Office Code.
-    - **POS Server**: configure bind host and port (default `0.0.0.0:9000`) that SaleFlex.PyPOS
-      terminals connect to when running in `office` mode.
-    - **GATE Integration**: configure SaleFlex.GATE base URL, API key, terminal ID, sync interval,
-      retry attempts, and request timeout.
-    Settings are written back to `settings.toml` and the in-memory `Settings` singleton is reloaded
-    immediately. The `System Settings` button is now connected in the Module Launcher.
-25. **REST API server** (`api/server.py`) now starts automatically in a background daemon thread
-    during application boot. Provides:
-    - `GET /api/v1/health` — liveness probe (always returns `{"status":"ok"}`).
-    - `GET  /api/v1/pos/init?office_code=&store_code=&terminal_code=` — returns the complete
-      initialization data set for a requesting POS terminal after validating its identity triplet.
-    - `POST /api/v1/pos/transactions` — accepts a batch of completed transaction records pushed by
-      a PyPOS terminal, including the full document tree (head, products, payments, discounts, etc.)
-      and current sequence counter values. Validates the terminal identity, persists all records, and
-      updates per-POS `transaction_sequence` rows.
-    - `POST /api/v1/pos/closures` — accepts completed end-of-day closure records and all summary
-      tables (VAT, payment type, department, discount, cashier, currency, country-specific data),
-      then updates the same per-POS sequence counters.
-    - `POST /api/v1/pos/sequences` — standalone endpoint to update per-POS sequence counters.
-    The server uses Flask and listens on the `[network] host:port` configured in `settings.toml`.
-26a. **Multi-POS transaction management**: OFFICE now supports receiving transactions from multiple
-    POS terminals simultaneously. Each terminal is identified by `(terminal_code, pos_id)`.
-    The `transaction_sequence` table stores per-POS counters independently using `(name, pos_id)`
-    as the unique key, so `ReceiptNumber` and `ClosureNumber` from different terminals never collide.
-26. Identity fields renamed from `store_id`/`office_id` to `store_code`/`office_code` throughout:
-    - `settings.toml`, `Settings` class, `BootstrapContext`, and all UI forms updated.
-    - The `(office_code, store_code, terminal_code)` triplet now uniquely identifies any POS
-      terminal in the ecosystem, supporting multiple OFFICE instances per store.
-27. **Logout support** added to `ModuleLauncherForm`:
-    - A **Logout** button sits beside the existing **Exit Application** button in the action bar.
-    - Confirming logout closes all open module forms, hides the launcher, and returns the UI to
-      `LoginForm` without restarting the process.
-    - The embedded Flask REST server keeps running in its background daemon thread throughout the
-      session change, so PyPOS terminals remain served without interruption.
-    - `ModuleLauncherForm` exposes a `logout_requested` PySide6 `Signal`; `OfficeApplication`
-      handles it in `_on_logout()` by destroying the old launcher and opening a fresh login screen.
+## Managed Cloud
 
-This baseline is intentionally simple and prepared for iterative expansion.
+Pair SaleFlex.OFFICE with **SaleFlex Cloud** (coming soon) for a fully managed backend:
 
-## UI Design Direction
+- No server to manage - we handle updates, backups, and scaling.
+- One-click OFFICE and GATE backend provisioning.
+- Built-in sales, stock, and KPI reporting dashboards.
+- Enterprise-grade security and compliance.
+- Multi-region availability.
 
-- Desktop-first and keyboard-first interaction model.
-- No touch-target-focused layout requirement.
-- Predictable static forms for operational users (`admin`, `manager`).
-- `StartupForm` remains splash/about-style and not fullscreen.
-- All operational forms (starting with `LoginForm` and `ModuleLauncherForm`) run in fullscreen.
+> Join the waitlist at [saleflex.net](https://saleflex.net) to be notified when Managed Cloud launches.
 
-## Installation & Setup
+---
 
-**Prerequisites**
+## Download Ready Builds
 
-- Python **3.13+** (see badges above)
-- Git checkout of this repo; work inside the `SaleFlex.OFFICE` directory
+Pre-packaged installers are currently in preparation. Once available, you will be able to download ready-to-run builds for Windows and Linux.
 
-**Install dependencies**
+**Until then, get started with:**
 
 ```bash
+git clone https://github.com/SaleFlex/SaleFlex.OFFICE.git
 cd SaleFlex.OFFICE
+
+# Windows
 python -m venv .venv
-# Windows: .venv\Scripts\activate
-# Linux/macOS: source .venv/bin/activate
+.venv\Scripts\activate
+
+# macOS / Linux
+python3 -m venv .venv
+source .venv/bin/activate
+
 pip install -r requirements.txt
-```
-
-**Configuration**
-
-- All runtime settings live in [`settings.toml`](settings.toml) at the project root (`[app]`, `[network]`, `[gate]`, `[database]`, `[logging]`, and so on).
-- After login, **System Settings** can edit mode, store/office codes, POS server bind address, and GATE integration; saving reloads the in-memory `Settings` singleton.
-- PyPOS terminals in **office** mode must use the same `store_code` and `office_code` as OFFICE, and a `terminal_code` registered in OFFICE. Match PyPOS `[office].base_url` to OFFICE `[network]` host and port.
-
-See [docs/03-configuration.md](docs/03-configuration.md) for field-by-field reference.
-
-**Run (development)**
-
-```bash
 python saleflex.py
 ```
 
-**Login and first run**
+**Default login credentials:**
 
-- Credentials are checked against `cashier.user_name` / `cashier.password` in the Office database; only `cashier.is_active = true` users can sign in.
-- On **first** startup (when the database file does not exist), bootstrap runs the full `data_layer/db_init_data` seed pipeline: default users `admin`, `jdoe`, `jpace` (legacy `manager` maps to `jpace` when present), default store `STORE-001`, terminal `POS-001`, and POS settings bound to that terminal.
-- After login, **Module Launcher** lists operational modules (cashier, product, campaign, customer, loyalty, POS, form, warehouse, definitions, sync, system settings, and related operations forms).
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `admin` | Administrator |
+| `jdoe` | `1234` | Manager |
 
-## Deployment Modes
+> **Requirements:** Python 3.13+ - PySide6 6.11+ - SQLAlchemy 2.0+ - Windows or Linux
 
-`SaleFlex.OFFICE` supports two working modes configured via `settings.toml`
-(or the **System Settings** module in the application):
+---
 
-| OFFICE mode | Behaviour |
-|-------------|-----------|
-| `standalone` | Local-only; serves PyPOS terminals from local DB; no GATE sync |
-| `gate` | Periodically pulls master-data from SaleFlex.GATE and pushes POS data back |
+## Screenshots
 
-`SaleFlex.PyPOS` supports three modes configured in its own `settings.toml`:
+> Screenshots coming soon. The module launcher, product management, campaign management, transaction viewer, and sync dashboard will be showcased here.
 
-| PyPOS mode | Connects to | Description |
-|------------|------------|-------------|
-| `standalone` | Nobody | Fully offline |
-| `office` | SaleFlex.OFFICE (`[network]` host:port) | Requests served from OFFICE local DB |
-| `gate` | SaleFlex.GATE (`[gate]` base_url) | Direct GATE integration |
+---
 
-Key rule: when PyPOS is in `office` mode, OFFICE **always responds with its locally stored data**.
-OFFICE never forwards a PyPOS request to GATE in real time; data flows from GATE to OFFICE
-in the background on a schedule.
+## Demo Video
 
-**Post-closure master-data refresh:** after every successful closure push (`POST /api/v1/pos/closures`),
-PyPOS automatically calls `GET /api/v1/pos/init` again and upserts the returned data into
-its local SQLite database.  Any product, price, cashier, campaign, or loyalty-rule changes
-made in OFFICE are thus reflected on the POS terminal at the start of each new sales period
-without requiring a manual restart or re-bootstrap.  All in-memory caches on PyPOS
-(`pos_data`, `product_data`, `ActiveCampaignCache`) are rebuilt immediately after the upsert
-completes.
+> A demo video is being prepared and will be published here and on the SaleFlex YouTube channel shortly.
 
-## User and Access Model
+---
 
-`SaleFlex.OFFICE` login is limited to non-cashier business roles:
+## Roadmap
 
-- `admin`
-- `manager`
-- future enterprise roles (for example analytics/reporting roles)
+### Done
+- Application startup with splash screen and bootstrap progress
+- Login screen with role-based access (admin, manager)
+- Module launcher with fullscreen operational layout
+- Product management (CRUD for products, variants, barcodes, attributes, manufacturers, units)
+- Campaign management (types, rules, campaign products, usage tracking)
+- Customer management (CRUD, segments, loyalty, coupon history)
+- Loyalty management (program, tiers, earn rules, redemption policies, point transactions)
+- Cashier management (CRUD, performance targets, transaction metrics)
+- POS terminal management (CRUD, settings, virtual keyboard definitions)
+- Form management (CRUD for dynamic POS forms, terminal targeting)
+- Warehouse management (locations, stock levels, movements, adjustments)
+- Definitions management (countries, regions, cities, currencies, VAT, payment types)
+- Transaction viewer (read-only, per-terminal tabs, product/payment/discount detail)
+- Data sync and backup monitor (outbox queue, failed items, sent history, GATE notifications)
+- System settings (mode, store/office codes, POS server bind, GATE configuration)
+- Built-in Flask REST API (health, POS init, transaction push, closure push, sequence sync)
+- Multi-terminal support with independent per-POS sequence counters
+- Logout support without restarting the REST server
+- Post-closure master-data refresh propagation to POS terminals
 
-Users are global across the SaleFlex ecosystem. A user with proper permission can log in to
-`SaleFlex.PyPOS`, `SaleFlex.OFFICE`, and other authorized SaleFlex terminals.
+### In Progress
+- GATE background sync worker
+- Advanced reporting dashboards
 
-## High-Level Data Flow
+### Planned
+- CSV/XML bulk import for products, campaigns, and loyalty definitions
+- CSV/PDF export for reports
+- Sales, stock, and KPI dashboards
+- Security hardening and PCI DSS compliance
+- Pre-packaged Windows and Linux installers
+- SaleFlex Cloud (managed hosting)
 
-1. Managers define products, campaigns, loyalty rules, and payment settings in `SaleFlex.OFFICE`.
-2. `SaleFlex.PyPOS` terminals pull required bootstrap definitions from `SaleFlex.OFFICE` over REST/JSON.
-3. `SaleFlex.PyPOS` pushes operational events/transactions to `SaleFlex.OFFICE` over REST/JSON.
-4. `SaleFlex.OFFICE` stores data locally and keeps backup continuity for store operations.
-5. When internet is available, `SaleFlex.OFFICE` syncs required data to/from `SaleFlex.GATE`.
-6. Managers run reports for one POS, selected POS terminals, or the full store.
+---
 
-Because POS terminals continuously transmit their work to `SaleFlex.OFFICE`, the Office database
-also acts as a practical in-store backup source during internet outages or terminal hardware issues.
+## Related Projects
 
-## Development Roadmap
+| Project | Description |
+|---------|-------------|
+| [SaleFlex.PyPOS](https://github.com/SaleFlex/SaleFlex.PyPOS) | Python / PySide6 touch POS terminal |
+| [SaleFlex.GATE](https://github.com/SaleFlex/SaleFlex.GATE) | Central hub and API gateway |
+| [SaleFlex.KITCHEN](https://github.com/SaleFlex/SaleFlex.KITCHEN) | Kitchen display system |
+| [SaleFlex.mPOS](https://github.com/SaleFlex/SaleFlex.mPOS) | Android mobile POS |
+| [SaleFlex.POS](https://github.com/SaleFlex/SaleFlex.POS) | Legacy .NET POS client |
 
-Phased plan from bootstrap to production-ready operations (see [docs/10-development-roadmap.md](docs/10-development-roadmap.md)).
-
-| Phase | Focus | Status (summary) |
-|-------|--------|------------------|
-| **1 — Foundation** | Package layout, `settings.toml`, DB + PyPOS-compatible models, static UI shell, REST skeleton (`/api/v1/health`, `/api/v1/pos/init`) | Largely delivered; auth/session polish and dashboard still evolving |
-| **2 — Operational modules** | Product/campaign/POS/loyalty static forms, POS inbound APIs, backup/audit | Many management UIs shipped; POS transaction/closure APIs and health monitor still open |
-| **3 — Integration & sync** | GATE connector, background worker, idempotency, POST endpoints for PyPOS | Outbox/inbox models, sync UI, system settings, `pos/init` delivered; GATE worker and ingestion endpoints pending |
-| **4 — Bulk import & reporting** | CSV/XML wizard, dashboards, CSV/PDF export | Planned |
-| **5 — Hardening** | Security, performance, packaging, runbooks | Planned |
-
-**MVP target:** static Office UI for admin/manager roles, REST for PyPOS bootstrap and event ingestion, local-first persistence, basic GATE sync in `gate` mode, starter reporting (dashboard + CSV/PDF).
-
-## Documentation
-
-Project documentation is available in `docs/`:
-
-- [docs/README.md](docs/README.md) - index and document map
-- [docs/01-introduction.md](docs/01-introduction.md)
-- [docs/02-architecture.md](docs/02-architecture.md)
-- [docs/03-configuration.md](docs/03-configuration.md)
-- [docs/04-auth-and-roles.md](docs/04-auth-and-roles.md)
-- [docs/05-integration-contracts.md](docs/05-integration-contracts.md)
-- [docs/06-data-sync-and-backup.md](docs/06-data-sync-and-backup.md)
-- [docs/07-bulk-import.md](docs/07-bulk-import.md)
-- [docs/08-reporting.md](docs/08-reporting.md)
-- [docs/09-project-structure.md](docs/09-project-structure.md)
-- [docs/10-development-roadmap.md](docs/10-development-roadmap.md)
-- [docs/11-startup-and-login-flow.md](docs/11-startup-and-login-flow.md)
-- [docs/12-module-launcher-and-fullscreen-policy.md](docs/12-module-launcher-and-fullscreen-policy.md)
-- [docs/13-multi-pos-definition-model.md](docs/13-multi-pos-definition-model.md)
-- [docs/14-cashier-management-module.md](docs/14-cashier-management-module.md)
-- [docs/15-product-management-module.md](docs/15-product-management-module.md)
-- [docs/16-campaign-management-module.md](docs/16-campaign-management-module.md)
-- [docs/17-customer-management-module.md](docs/17-customer-management-module.md)
-- [docs/18-pos-management-module.md](docs/18-pos-management-module.md)
-- [docs/19-form-management-module.md](docs/19-form-management-module.md)
-- [docs/20-loyalty-management-module.md](docs/20-loyalty-management-module.md)
-- [docs/21-warehouse-management-module.md](docs/21-warehouse-management-module.md)
-- [docs/22-definitions-management-module.md](docs/22-definitions-management-module.md)
-- [docs/23-sync-management-module.md](docs/23-sync-management-module.md)
-- [docs/24-system-settings-module.md](docs/24-system-settings-module.md)
+---
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0. See `LICENSE` for details.
+This project is licensed under the **GNU Affero General Public License v3.0**. See [LICENSE](LICENSE) for details.
 
 ---
 
@@ -406,10 +194,8 @@ This project is licensed under the GNU Affero General Public License v3.0. See `
 
 ## Donation and Support
 
-If you like the project and want to support it or if you want to contribute to the development of new modules, you can donate to the following crypto addresses.
+If you find SaleFlex.OFFICE useful and want to support its development:
 
-- USDT: `0xa5a87a939bfcd492f056c26e4febe102ea599b5b`
-- BUSD: `0xa5a87a939bfcd492f056c26e4febe102ea599b5b`
-- BTC: `15qyZpi6HjYyVhKKBsCbZSXU4bLdVJ8Phe`
-- ETH: `0xa5a87a939bfcd492f056c26e4febe102ea599b5b`
-- SOL: `Gt3bDczPcJvfBeg9TTBrBJGSHLJVkvnSSTov8W3QMpQf`
+- **USDT / BUSD / ETH:** `0xa5a87a939bfcd492f056c26e4febe102ea599b5b`
+- **BTC:** `15qyZpi6HjYyVhKKBsCbZSXU4bLdVJ8Phe`
+- **SOL:** `Gt3bDczPcJvfBeg9TTBrBJGSHLJVkvnSSTov8W3QMpQf`
